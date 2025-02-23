@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 6071076568847132299}
   - component: {fileID: 4393740382579158215}
   - component: {fileID: 3751529227955192563}
+  - component: {fileID: 5478848075683700094}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -201,6 +202,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   characterData: {fileID: 11400000, guid: 667d44e7b405e3e4ba73a824481e0148, type: 2}
+  normalSprite: {fileID: 21300000, guid: 20cdcc48a23807a4289c6bd98725d681, type: 3}
+  digivolvedSprite: {fileID: 21300000, guid: 9590d8394b4a32c42b9d3e5686835d42, type: 3}
   characterName: 
   level: 0
   maxHP: 0
@@ -212,3 +215,25 @@ MonoBehaviour:
   xp: 0
   xpToNextLevel: 100
   isDigitized: 0
+  attacks: []
+--- !u!95 &5478848075683700094
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4510824110806828773}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

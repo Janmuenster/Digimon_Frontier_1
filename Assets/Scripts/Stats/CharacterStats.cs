@@ -1,3 +1,4 @@
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,6 +6,13 @@ public class CharacterStats : MonoBehaviour
 {
     [Header("Datenquelle")]
     public CharacterData characterData; // Ziehe hier das ScriptableObject rein!
+
+    [Header("Sprites")]
+    public Sprite normalSprite;
+    public Sprite digivolvedSprite;
+    private SpriteRenderer spriteRenderer;
+    private Animator animator;
+
 
     [Header("Stats")]
     public string characterName;
@@ -29,8 +37,14 @@ public class CharacterStats : MonoBehaviour
     public List<Attack> attacks = new List<Attack>();
     void Start()
     {
-        attacks.Add(new Attack("Schlag", 10, ElementType.Free, AttackType.Normal));
-        attacks.Add(new Attack("Feuerball", 20, ElementType.Fire, AttackType.Special));
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null)
+        {
+            Debug.LogError(" SpriteRenderer nicht gefunden!");
+        }
+        animator = GetComponent<Animator>();
+        attacks.Add(new Attack("Schlag", 1, ElementType.Free, AttackType.Normal));
+        attacks.Add(new Attack("Feuerball", 2, ElementType.Fire, AttackType.Special));
     
 
         if (characterData != null)
@@ -46,10 +60,10 @@ public class CharacterStats : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Keine CharacterData f�r " + gameObject.name + " gesetzt!");
+            Debug.LogError("Keine CharacterData für " + gameObject.name + " gesetzt!");
         }
 
-        // Basis-Stats f�r Digitation speichern
+        // Basis-Stats für Digitation speichern
         baseHP = maxHP;
         baseAttack = attack;
         baseDefense = defense;
@@ -60,30 +74,66 @@ public class CharacterStats : MonoBehaviour
     }
 
     public void ToggleDigitation(bool digitize)
+    
+        {
+            StartCoroutine(DigivolveSequence(digitize));
+            
+       }
+
+    IEnumerator DigivolveSequence(bool digitize)
     {
         isDigitized = digitize;
 
+        // 1️⃣ Animation starten
+        animator.SetTrigger("Digivolve");
+
+        // Warte, bis die Animation vorbei ist
+        yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
+
+        // 2️⃣ Animator deaktivieren, damit er nicht das Sprite überschreibt
+        animator.enabled = false;
+
+        // 3️⃣ Flash-Effekt hinzufügen
+        spriteRenderer.color = Color.yellow;
+        yield return new WaitForSeconds(0.5f);
+        spriteRenderer.color = Color.white;
+
+        // 4️⃣ Sprite wechseln
+        spriteRenderer.sprite = digitize ? digivolvedSprite : normalSprite;
+
+        Debug.Log("Digitation abgeschlossen: " + spriteRenderer.sprite.name);
+    
+        // 4️⃣ Stats anpassen
         if (digitize)
         {
-            maxHP = baseHP * 2;
-            attack = baseAttack * 2;
-            defense = baseDefense * 2;
-            element = characterData.digiElement;  // Element wechselt zur Digiform
-            type = characterData.digiType;
-            currentHP = maxHP; // Setze das Leben auf das neue Maximum!
+            maxHP *= 2;
+            attack *= 2;
+            defense *= 2;
+            currentHP = maxHP;
         }
         else
         {
-            maxHP = baseHP;
-            attack = baseAttack;
-            defense = baseDefense;
-            element = baseElement;  // Zur�ck zum normalen Element
-            type = baseType;
-            currentHP = Mathf.Min(currentHP, maxHP); // Falls mehr HP als das Maximum nach Digitation
+            maxHP /= 2;
+            attack /= 2;
+            defense /= 2;
+            currentHP = Mathf.Min(currentHP, maxHP);
         }
 
-        Debug.Log(characterName + " hat " + (digitize ? "digitiert!" : "zur�ckdigiitiert!"));
+        Debug.Log(characterName + " hat digitiert!");
     }
+
+   
+
+    //  Diese Funktion wird von der Animation aufgerufen!
+    public void OnDigivolveAnimationEnd()
+    {
+        Debug.Log("Animation Event wurde ausgelöst! ");
+        spriteRenderer.sprite = isDigitized ? digivolvedSprite : normalSprite;
+
+        Debug.Log("Neues Sprite: " + spriteRenderer.sprite.name); // Prüfen, ob das Sprite wirklich geändert wurde
+    }
+
+
     public void GainXP(int amount)
     {
         xp += amount;
@@ -99,9 +149,9 @@ public class CharacterStats : MonoBehaviour
     {
         xp -= xpToNextLevel;
         level++;
-        xpToNextLevel += 50; // Erh�he die ben�tigte XP f�r das n�chste Level
+        xpToNextLevel += 50; // Erhöhe die benötigte XP für das nächste Level
 
-        // Erh�he die Stats basierend auf einem Wachstumsschema
+        // Erhöhe die Stats basierend auf einem Wachstumsschema
         maxHP += Mathf.RoundToInt(baseHP * 0.2f);
         attack += Mathf.RoundToInt(baseAttack * 0.15f);
         defense += Mathf.RoundToInt(baseDefense * 0.1f);

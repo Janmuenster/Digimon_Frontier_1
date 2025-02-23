@@ -42,9 +42,17 @@ public class BattleManager : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("Spieler-Team Größe: " + playerTeam.Count);
+        Debug.Log("Gegner-Team Größe: " + enemyTeam.Count);
         SetupBattle();
     }
-
+    void Update()
+    {
+        if (playerTeam.Count == 0)
+        {
+            Debug.LogError("Achtung: playerTeam wurde geleert!");
+        }
+    }
     void SetupBattle()
     {
         if (playerTeam.Count == 0 || enemyTeam.Count == 0)
@@ -55,15 +63,19 @@ public class BattleManager : MonoBehaviour
         currentPlayerTurn = playerTeam[0]; // Sicherstellen, dass es ein gültiges Element gibt
         enemy = enemyTeam[0];
 
-        battleUI.SetupUI(playerTeam, enemyTeam);
+        Debug.Log("Aktueller Spieler: " + (currentPlayerTurn != null ? currentPlayerTurn.characterName : "NULL"));
+        Debug.Log("HP des aktuellen Spielers: " + (currentPlayerTurn != null ? currentPlayerTurn.currentHP.ToString() : "NULL"));
+
+
+        Debug.Log("Aufruf von battleUI.SetupUI()");
+        StartCoroutine(DelayedSetupUI());
+
         Debug.Log("Kampf beginnt mit " + currentPlayerTurn.characterName + " gegen " + enemy.characterName);
     
     Debug.Log("Kampf beginnt!");
         currentTurn = 0;
         playerTurn = true;
 
-        enemy = enemyTeam[0];  // Gegner aus der Liste auswählen
-        currentPlayerTurn = playerTeam[0];  // Spielercharakter auswählen
 
         // UI setzen
         enemyNameText.text = enemy.characterName;
@@ -75,13 +87,27 @@ public class BattleManager : MonoBehaviour
         playerHPBar.value = currentPlayerTurn.currentHP;
 
         // Attacken-Buttons setzen
-        attack1Button.GetComponentInChildren<TextMeshProUGUI>().text = currentPlayerTurn.attacks[0].attackName;
-        attack2Button.GetComponentInChildren<TextMeshProUGUI>().text = currentPlayerTurn.attacks[1].attackName;
+        if (currentPlayerTurn.attacks.Count > 0)
+        {
+            attack1Button.GetComponentInChildren<TextMeshProUGUI>().text = currentPlayerTurn.attacks[0].attackName;
+            attack1Button.onClick.RemoveAllListeners();
+            attack1Button.onClick.AddListener(() => PlayerAttack(currentPlayerTurn, enemy, currentPlayerTurn.attacks[0]));
+        }
+        if (currentPlayerTurn.attacks.Count > 1)
+        {
+            attack2Button.GetComponentInChildren<TextMeshProUGUI>().text = currentPlayerTurn.attacks[1].attackName;
+            attack1Button.onClick.RemoveAllListeners();
+            attack2Button.onClick.AddListener(() => PlayerAttack(currentPlayerTurn, enemy, currentPlayerTurn.attacks[1]));
+        }
 
-        attack1Button.onClick.AddListener(() => PlayerAttack(currentPlayerTurn, enemy, currentPlayerTurn.attacks[0]));
-        attack2Button.onClick.AddListener(() => PlayerAttack(currentPlayerTurn, enemy, currentPlayerTurn.attacks[1]));
-
+        
         StartCoroutine(NextTurn());
+    }
+
+    IEnumerator DelayedSetupUI()
+    {
+        yield return null; // Warten, bis Werte gesetzt sind
+        battleUI.SetupUI(playerTeam, enemyTeam);
     }
 
     IEnumerator NextTurn()
@@ -123,21 +149,35 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            NextRound();
+            playerTurn = false; // Gegner ist jetzt dran!
+            StartCoroutine(NextTurn());
         }
     }
 
     IEnumerator EnemyTurn()
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(1f); // Kurz warten, bevor Gegner angreift
 
-        int damage = enemy.attack - currentPlayerTurn.defense / 2;
-        if (damage < 1) damage = 1;
+        if (enemy.attacks.Count > 0)
+        {
+            // Zufällige Attacke des Gegners auswählen
+            Attack chosenAttack = enemy.attacks[Random.Range(0, enemy.attacks.Count)];
+            int damage = Mathf.RoundToInt(chosenAttack.baseDamage);
 
-        currentPlayerTurn.TakeDamage(damage);
-        playerHPBar.value = currentPlayerTurn.currentHP;
+            Debug.Log(enemy.characterName + " benutzt " + chosenAttack.attackName + " gegen " + currentPlayerTurn.characterName + "! Schaden: " + damage);
+            currentPlayerTurn.TakeDamage(damage);
+        }
+        else
+        {
+            // Standardangriff falls keine Attacken definiert sind
+            int damage = enemy.attack - currentPlayerTurn.defense / 2;
+            if (damage < 1) damage = 1;
 
-        Debug.Log(enemy.characterName + " greift an! Schaden: " + damage);
+            Debug.Log(enemy.characterName + " greift normal an! Schaden: " + damage);
+            currentPlayerTurn.TakeDamage(damage);
+        }
+
+        playerHPBar.value = currentPlayerTurn.currentHP; // HP-Bar updaten
 
         if (currentPlayerTurn.currentHP <= 0)
         {
@@ -145,9 +185,11 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            NextRound();
+            playerTurn = true; // Spieler ist wieder dran
+            StartCoroutine(NextTurn());
         }
     }
+
 
     void NextRound()
     {
@@ -165,25 +207,31 @@ public class BattleManager : MonoBehaviour
 
     bool CheckWinCondition()
     {
-        if (playerTeam.Count == 0)
+        bool allPlayersDefeated = playerTeam.TrueForAll(player => player.currentHP <= 0);
+        bool allEnemiesDefeated = enemyTeam.TrueForAll(enemy => enemy.currentHP <= 0);
+
+        if (allPlayersDefeated)
         {
             Debug.Log("Spieler haben verloren!");
+            EndBattle(false);
             return true;
         }
-        if (enemyTeam.Count == 0)
+        if (allEnemiesDefeated)
         {
             Debug.Log("Spieler haben gewonnen!");
+            EndBattle(true);
             return true;
         }
         return false;
     }
+
 
     public void DigivolvePlayer()
     {
         if (currentPlayerTurn != null)
         {
             currentPlayerTurn.ToggleDigitation(true);
-            battleUI.ShowBattleOptions(currentPlayerTurn); // UI-Update nach Digitation
+            battleUI.ShowBattleOptions(currentPlayerTurn); // UI updaten
         }
     }
     public void OnAttackButtonPressed()
@@ -205,19 +253,28 @@ public class BattleManager : MonoBehaviour
         PlayerAttack(currentPlayerTurn, enemy, currentPlayerTurn.attacks[0]); // Nutzt die erste Attacke in der Liste
     }
 
-    void EndBattle(bool playerWon)
+    IEnumerator EndBattleCoroutine(bool playerWon)
     {
         Debug.Log(playerWon ? "Spieler hat gewonnen!" : "Spieler hat verloren!");
 
-        // Digitation zurücksetzen
-        foreach (CharacterStats player in playerTeam)
+        // Falls Spieler gewonnen hat, XP geben
+        if (playerWon)
         {
-            if (player.isDigitized)
-                player.ToggleDigitation(false);
+            foreach (CharacterStats player in playerTeam)
+            {
+                player.GainXP(50); // Hier könnte eine variable XP-Belohnung rein
+            }
         }
+
+        yield return new WaitForSeconds(2f); // Kurze Wartezeit für Effekte
 
         SceneManager.LoadScene("Overworld"); // Zurück zur Overworld
     }
+    void EndBattle(bool playerWon)
+    {
+        StartCoroutine(EndBattleCoroutine(playerWon));
+    }
+
 
     public float GetElementMultiplier(ElementType attacker, ElementType defender)
     {
