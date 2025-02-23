@@ -7,23 +7,17 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 1
     path: Assets/Scenes/Intro.unity
-    guid: e915065535e39414497f2b0f3655f727
+    guid: cc9c7d0a196444f4d9bf8bfb884f9aa7
   - enabled: 1
-    path: Assets/Scenes/Main Menu.unity
-    guid: 457e28a4558ce6c42a7467511b877e62
+    path: Assets/Scenes/MainMenu.unity
+    guid: 9143a9ec0f4468049977c8129bfa6bc7
   - enabled: 1
-    path: Assets/Scenes/level.unity
+    path: Assets/Scenes/Overworld.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
-    path: Assets/Scenes/Options.unity
-    guid: 89e08cdbe76bb2d46a6582c5e63b212c
-  - enabled: 1
-    path: Assets/Scenes/Battles 1.unity
-    guid: ee1ff604eec429f4fb1c692953dab0b8
-  - enabled: 0
-    path: Assets/Scenes/AlterBattle.unity
-    guid: 872609604e4bcc24da4c9ee276121e1e
+    path: Assets/Scenes/BattleScene.unity
+    guid: 4ce36bcecd254d64b8a6c1b0ab0d533a
   - enabled: 1
     path: Assets/Scenes/GameOver.unity
-    guid: f4a9ef47834a89c4c91ac22e6819b5fc
+    guid: c03fb3da1123f29448929b04d6af772d
   m_configObjects: {}

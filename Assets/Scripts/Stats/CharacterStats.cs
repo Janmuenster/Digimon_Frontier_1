@@ -1,79 +1,126 @@
-using System;
-using Unity.VisualScripting;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class CharacterStats : MonoBehaviour
 {
-    public string unitName;
-    public int maxHealth;
-    public int currentHealth;
-    public int attack;
-    public int baseDefense;
-    public int currentDefense;
+    [Header("Datenquelle")]
+    public CharacterData characterData; // Ziehe hier das ScriptableObject rein!
+
+    [Header("Stats")]
+    public string characterName;
     public int level;
+    public int maxHP;
+    public int currentHP;
+    public int attack;
+    public int defense;
+    public string element;
+    public string type;
+    public int xp = 0;
+    public int xpToNextLevel = 100;
 
-    public DigimonType digimonType;
-    public ElementType elementType;
+    [Header("Digitation")]
+    public bool isDigitized = false;
+    private int baseHP;
+    private int baseAttack;
+    private int baseDefense;
+    private string baseElement;
+    private string baseType;
 
-    public Image typeIcon;
-    public Image elementIcon;
-
-    public DigimonAndElementIcons iconManager;
-
-    protected virtual void Awake()
+    public List<Attack> attacks = new List<Attack>();
+    void Start()
     {
-        AssignBaseStats();
-        currentHealth = maxHealth;
-        currentDefense = baseDefense;
-        Debug.Log($"CharacterStats initialized for {gameObject.name}. Name: {unitName}, Health: {currentHealth}/{maxHealth}, Type: {digimonType}, Element: {elementType}");
-    }
+        attacks.Add(new Attack("Schlag", 10, ElementType.Free, AttackType.Normal));
+        attacks.Add(new Attack("Feuerball", 20, ElementType.Fire, AttackType.Special));
+    
 
-    protected virtual void Start()
-    {
-        iconManager = FindObjectOfType<DigimonAndElementIcons>();
-        UpdateTypeIcon();
-        UpdateElementIcon();
-    }
-
-    public virtual void TakeDamage(int damage)
-    {
-        int actualDamage = Mathf.Max(damage - currentDefense, 0);
-        currentHealth = Mathf.Max(currentHealth - actualDamage, 0);
-        Debug.Log($"{unitName} nimmt {actualDamage} Schaden. Verbleibende HP: {currentHealth}/{maxHealth}");
-    }
-
-    public virtual void Heal(int amount)
-    {
-        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-        Debug.Log($"{unitName} wird um {amount} geheilt. Aktuelle HP: {currentHealth}/{maxHealth}");
-    }
-
-    public virtual void ApplyDefense(int amount)
-    {
-        currentDefense += amount;
-        Debug.Log($"{unitName} erhöht die Verteidigung um {amount}. Aktuelle Verteidigung: {currentDefense}");
-    }
-
-    protected virtual void AssignBaseStats()
-    {
-        Debug.LogWarning("AssignBaseStats wurde nicht in der abgeleiteten Klasse implementiert.");
-    }
-
-    protected void UpdateTypeIcon()
-    {
-        if (typeIcon != null && iconManager != null)
+        if (characterData != null)
         {
-            typeIcon.sprite = iconManager.GetSpriteForType(digimonType);
+            // Lade die Startwerte aus dem `CharacterData` Objekt
+            characterName = characterData.characterName;
+            level = characterData.startLevel;
+            maxHP = characterData.startMaxHP;
+            attack = characterData.startAttack;
+            defense = characterData.startDefense;
+            element = characterData.element;
+            type = characterData.type;
+        }
+        else
+        {
+            Debug.LogError("Keine CharacterData für " + gameObject.name + " gesetzt!");
+        }
+
+        // Basis-Stats für Digitation speichern
+        baseHP = maxHP;
+        baseAttack = attack;
+        baseDefense = defense;
+        baseElement = element;
+        baseType = type;
+
+        currentHP = maxHP;
+    }
+
+    public void ToggleDigitation(bool digitize)
+    {
+        isDigitized = digitize;
+
+        if (digitize)
+        {
+            maxHP = baseHP * 2;
+            attack = baseAttack * 2;
+            defense = baseDefense * 2;
+            element = characterData.digiElement;  // Element wechselt zur Digiform
+            type = characterData.digiType;
+            currentHP = maxHP; // Setze das Leben auf das neue Maximum!
+        }
+        else
+        {
+            maxHP = baseHP;
+            attack = baseAttack;
+            defense = baseDefense;
+            element = baseElement;  // Zurück zum normalen Element
+            type = baseType;
+            currentHP = Mathf.Min(currentHP, maxHP); // Falls mehr HP als das Maximum nach Digitation
+        }
+
+        Debug.Log(characterName + " hat " + (digitize ? "digitiert!" : "zurückdigiitiert!"));
+    }
+    public void GainXP(int amount)
+    {
+        xp += amount;
+        Debug.Log(characterName + " hat " + amount + " XP erhalten! (Total: " + xp + ")");
+
+        while (xp >= xpToNextLevel)
+        {
+            LevelUp();
         }
     }
 
-    protected void UpdateElementIcon()
+    private void LevelUp()
     {
-        if (elementIcon != null && iconManager != null)
+        xp -= xpToNextLevel;
+        level++;
+        xpToNextLevel += 50; // Erhöhe die benötigte XP für das nächste Level
+
+        // Erhöhe die Stats basierend auf einem Wachstumsschema
+        maxHP += Mathf.RoundToInt(baseHP * 0.2f);
+        attack += Mathf.RoundToInt(baseAttack * 0.15f);
+        defense += Mathf.RoundToInt(baseDefense * 0.1f);
+
+        Debug.Log(characterName + " ist auf Level " + level + " aufgestiegen!");
+    }
+    public void TakeDamage(int damage)
+    {
+        currentHP -= damage;
+        if (currentHP <= 0)
         {
-            elementIcon.sprite = iconManager.GetSpriteForElement(elementType);
+            currentHP = 0;
+            Die();
         }
     }
 
+    void Die()
+    {
+        Debug.Log(characterName + " wurde besiegt!");
+        BattleManager.instance.playerTeam.Remove(this); // Entferne den Charakter aus dem Kampf
+    }
 }

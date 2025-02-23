@@ -1,38 +1,81 @@
 using UnityEngine;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using System;
 
-public class saveManager : MonoBehaviour
+public class SaveManager : MonoBehaviour
 {
-    public static void SavePlayer(PlayerStats player)
+    public static SaveManager instance;
+    private string savePath;
+
+    void Awake()
     {
-        BinaryFormatter formatter = new BinaryFormatter();
-        string path = Application.persistentDataPath + "/player.gid";
-        FileStream stream = new FileStream(path, FileMode.Create);
-
-        PlayerData data = new PlayerData(player);
-
-        formatter.Serialize(stream, data);
-        stream.Close();
-    }
-
-    public static PlayerData LoadPlayer()
-    {
-        string path = Application.persistentDataPath + "/player.gid";
-        if (File.Exists(path))
+        if (instance == null)
         {
-            BinaryFormatter formatter = new BinaryFormatter();
-            FileStream stream = new FileStream(path, FileMode.Open);
-
-            PlayerData data = formatter.Deserialize(stream) as PlayerData;
-            stream.Close();
-
-            return data;
+            instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            Debug.LogError("Save file not found in " + path);
+            Destroy(gameObject);
+        }
+
+        savePath = Application.persistentDataPath + "/savegame.dat";
+    }
+
+    public void SaveGame(SaveData data)
+    {
+        try
+        {
+            using (FileStream file = new FileStream(savePath, FileMode.Create))
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(file, data);
+            }
+
+            Debug.Log("Spiel gespeichert! Position: " + data.GetPlayerPosition());
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("Fehler beim Speichern: " + ex.Message);
+        }
+    }
+
+    public bool SaveExists()
+    {
+        return File.Exists(savePath);
+    }
+
+    public SaveData LoadGame()
+    {
+        if (!File.Exists(savePath))
+        {
+            Debug.LogWarning("Kein Speicherstand gefunden!");
             return null;
+        }
+
+        try
+        {
+            using (FileStream file = new FileStream(savePath, FileMode.Open))
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                SaveData data = (SaveData)bf.Deserialize(file);
+                return data;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Fehler beim Laden des Spiels: " + e.Message);
+            return null;
+        }
+    }
+
+    public void DeleteSave()
+    {
+        if (File.Exists(savePath))
+        {
+            File.Delete(savePath);
+            Debug.Log("Spielstand gelöscht!");
         }
     }
 }
