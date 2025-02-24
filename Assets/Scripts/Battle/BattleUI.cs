@@ -95,8 +95,4 @@ public void ShowBattleOptions(CharacterStats player)
     {
         BattleManager.instance.PlayerAttack(currentPlayer, BattleManager.instance.enemyTeam[0], attack);
     }
-    public void OnDigivolveButtonPressed()
-    {
-        BattleManager.instance.DigivolvePlayer();
-    }
 }
