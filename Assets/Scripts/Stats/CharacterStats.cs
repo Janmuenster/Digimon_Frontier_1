@@ -46,7 +46,7 @@ public class CharacterStats : MonoBehaviour
         animator = GetComponent<Animator>();
         attacks.Add(new Attack("Schlag", 1, ElementType.Free, AttackType.Normal));
         attacks.Add(new Attack("Feuerball", 2, ElementType.Fire, AttackType.Special));
-    
+
 
         if (characterData != null)
         {
@@ -77,15 +77,15 @@ public class CharacterStats : MonoBehaviour
         {
             currentHP = PlayerPrefs.GetInt("CurrentHP_" + characterName);
             Debug.Log("HP für " + characterName + " aus Speicher geladen: " + currentHP);
-       
-       
+
+
         }
         else
         {
             currentHP = maxHP; // Falls keine gespeicherten Werte existieren, setze es auf maxHP
             Debug.Log("Kein gespeicherter Wert gefunden. Setze " + characterName + " HP auf: " + maxHP);
-        
-    }
+
+        }
 
         Debug.Log("Geladene HP: " + currentHP + "/" + maxHP + " für " + characterName);
 
@@ -137,7 +137,7 @@ public class CharacterStats : MonoBehaviour
                 attack = Mathf.RoundToInt(attack * 2f);
                 defense = Mathf.RoundToInt(defense * 2f);
 
-              
+
 
                 currentDigivolutionIndex++; // Zum nächsten Digivolutionslevel wechseln
             }
@@ -215,26 +215,30 @@ public class CharacterStats : MonoBehaviour
                 currentHP = 0;
                 Die();
             }
-        }
-        else
-        {
-            // Normaler Schaden, wenn der Spieler nicht digitiert
-            currentHP -= damage;
-            if (currentHP <= 0)
-            {
-                currentHP = 0;
-                Die();
-            }
             if (BattleManager.instance != null)
             {
-                BattleManager.instance.UpdateHPUI(this);
+                BattleManager.instance.UpdateUIAfterDigivolution();
+            }
+            else
+            {
+                // Normaler Schaden, wenn der Spieler nicht digitiert
+                currentHP -= damage;
+                if (currentHP <= 0)
+                {
+                    currentHP = 0;
+                    Die();
+                }
+                if (BattleManager.instance != null)
+                {
+                    BattleManager.instance.UpdateUIAfterDigivolution();
+                }
             }
         }
-    }
 
-    void Die()
-    {
-        Debug.Log(characterName + " wurde besiegt!");
-        BattleManager.instance.playerTeam.Remove(this); // Entferne den Charakter aus dem Kampf
+        void Die()
+        {
+            Debug.Log(characterName + " wurde besiegt!");
+            BattleManager.instance.playerTeam.Remove(this); // Entferne den Charakter aus dem Kampf
+        }
     }
 }

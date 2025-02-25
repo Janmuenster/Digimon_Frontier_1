@@ -7316,6 +7316,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6719046478436359379, guid: 7e2aa902ca134024f8a9a0335c35588b, type: 3}
+      propertyPath: m_SortingOrder
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7988424483450504316, guid: 7e2aa902ca134024f8a9a0335c35588b, type: 3}
       propertyPath: m_Name
       value: Cerberumon
