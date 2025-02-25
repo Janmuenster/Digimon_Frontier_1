@@ -27,6 +27,7 @@ public class CharacterStats : MonoBehaviour
     public int xpToNextLevel = 100;
 
     [Header("Digitation")]
+    public int currentDigivolutionIndex = 0; // Index der aktuellen Digitation
     public bool isDigitized = false;
     private int baseHP;
     private int baseAttack;
@@ -70,15 +71,30 @@ public class CharacterStats : MonoBehaviour
         baseElement = element;
         baseType = type;
 
-        currentHP = maxHP;
+
+
+        if (PlayerPrefs.HasKey("CurrentHP_" + characterName))
+        {
+            currentHP = PlayerPrefs.GetInt("CurrentHP_" + characterName);
+            Debug.Log("HP für " + characterName + " aus Speicher geladen: " + currentHP);
+       
+       
+        }
+        else
+        {
+            currentHP = maxHP; // Falls keine gespeicherten Werte existieren, setze es auf maxHP
+            Debug.Log("Kein gespeicherter Wert gefunden. Setze " + characterName + " HP auf: " + maxHP);
+        
+    }
+
+        Debug.Log("Geladene HP: " + currentHP + "/" + maxHP + " für " + characterName);
+
     }
 
     public void ToggleDigitation(bool digitize)
-    
-        {
-            StartCoroutine(DigivolveSequence(digitize));
-            
-       }
+    {
+        StartCoroutine(DigivolveSequence(digitize));
+    }
 
     IEnumerator DigivolveSequence(bool digitize)
     {
@@ -102,27 +118,57 @@ public class CharacterStats : MonoBehaviour
         spriteRenderer.sprite = digitize ? digivolvedSprite : normalSprite;
 
         Debug.Log("Digitation abgeschlossen: " + spriteRenderer.sprite.name);
-    
-        // 4️⃣ Stats anpassen
+
+        // 4️⃣ Stats und Name anpassen
         if (digitize)
         {
-            maxHP *= 2;
-            attack *= 2;
-            defense *= 2;
-            currentHP = maxHP;
+            // Ändere die Digitation-Attribute, basierend auf dem aktuellen Digivolutionsindex
+            if (currentDigivolutionIndex < characterData.digivolutions.Length)
+            {
+                Digivolution digivolution = characterData.digivolutions[currentDigivolutionIndex];
+                characterName = digivolution.digiName; // Name der Digitation setzen
+                element = digivolution.digiElement;   // Element setzen
+                type = digivolution.digiType;         // Typ setzen
+
+                // Berechnung der neuen Werte basierend auf den aktuellen Werten, nicht einfach verdoppeln
+                float hpMultiplier = 2f;
+                maxHP = Mathf.RoundToInt(maxHP * hpMultiplier);
+                currentHP = Mathf.RoundToInt(currentHP * hpMultiplier);
+                attack = Mathf.RoundToInt(attack * 2f);
+                defense = Mathf.RoundToInt(defense * 2f);
+
+              
+
+                currentDigivolutionIndex++; // Zum nächsten Digivolutionslevel wechseln
+            }
         }
         else
         {
-            maxHP /= 2;
-            attack /= 2;
-            defense /= 2;
+            // Zurück zur Basis-Digitation
+            characterName = characterData.characterName;
+            element = characterData.element;
+            type = characterData.type;
+
+            // Berechne die Rückkehr-Stats basierend auf den aktuellen HP und den Standardwerten
+            float hpMultiplier = 0.5f;
+            maxHP = Mathf.RoundToInt(maxHP * hpMultiplier);
+            currentHP = Mathf.RoundToInt(currentHP * hpMultiplier);
+            attack = Mathf.RoundToInt(attack * 0.5f);
+            defense = Mathf.RoundToInt(defense * 0.5f);
+
+            // Setze die aktuellen HP auf den minimalen Wert zwischen den aktuellen HP und den maximalen
             currentHP = Mathf.Min(currentHP, maxHP);
+
+            currentDigivolutionIndex = 0; // Zurücksetzen des Digivolutionsindex
         }
 
         Debug.Log(characterName + " hat digitiert!");
+
+        // UI nach Digitation updaten
+        BattleManager.instance.UpdateUIAfterDigivolution();
     }
 
-   
+
 
     //  Diese Funktion wird von der Animation aufgerufen!
     public void OnDigivolveAnimationEnd()
@@ -160,11 +206,25 @@ public class CharacterStats : MonoBehaviour
     }
     public void TakeDamage(int damage)
     {
-        currentHP -= damage;
-        if (currentHP <= 0)
+        if (isDigitized)
         {
-            currentHP = 0;
-            Die();
+            // Wenn der Spieler in der Digitation ist, wird der Schaden angewendet und er kann nicht einfach zurückgesetzt werden
+            currentHP -= damage;
+            if (currentHP <= 0)
+            {
+                currentHP = 0;
+                Die();
+            }
+        }
+        else
+        {
+            // Normaler Schaden, wenn der Spieler nicht digitiert
+            currentHP -= damage;
+            if (currentHP <= 0)
+            {
+                currentHP = 0;
+                Die();
+            }
         }
     }
 

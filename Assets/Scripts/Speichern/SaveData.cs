@@ -10,6 +10,19 @@ public class SaveData
     public string sceneName;
     public string enemyToDestroy; // <-- Neu hinzugefügt für Gegnerstatus
 
+    public string characterName;
+    public int level;
+    public int maxHP;
+    public int currentHP;
+    public int attack;
+    public int defense;
+    public string element;
+    public string type;
+    public int xp;
+    public int xpToNextLevel;
+    public bool isDigitized;
+
+
     // Getter & Setter für die Position
     public Vector3 GetPlayerPosition()
     {

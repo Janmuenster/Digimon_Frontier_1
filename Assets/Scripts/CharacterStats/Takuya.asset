@@ -19,5 +19,7 @@ MonoBehaviour:
   startDefense: 1
   element: Free
   type: Free
-  digiElement: Fire
-  digiType: Vaccine
+  digivolutions:
+  - digiName: Agunimon
+    digiElement: Fire
+    digiType: Vaccine

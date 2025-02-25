@@ -27,19 +27,27 @@ public class SaveManager : MonoBehaviour
     {
         try
         {
+            // Stelle sicher, dass wir die aktuellen Werte aus dem Player-Objekt speichern
+            CharacterStats playerStats = FindObjectOfType<CharacterStats>();
+            if (playerStats != null)
+            {
+                data.currentHP = playerStats.currentHP; // Speichert den aktuellen HP-Wert
+            }
+
             using (FileStream file = new FileStream(savePath, FileMode.Create))
             {
                 BinaryFormatter bf = new BinaryFormatter();
                 bf.Serialize(file, data);
             }
 
-            Debug.Log("Spiel gespeichert! Position: " + data.GetPlayerPosition());
+            Debug.Log("Spiel gespeichert! Position: " + data.GetPlayerPosition() + " HP: " + data.currentHP);
         }
         catch (Exception ex)
         {
             Debug.LogError("Fehler beim Speichern: " + ex.Message);
         }
     }
+
 
     public bool SaveExists()
     {
@@ -60,6 +68,15 @@ public class SaveManager : MonoBehaviour
             {
                 BinaryFormatter bf = new BinaryFormatter();
                 SaveData data = (SaveData)bf.Deserialize(file);
+
+                // Falls der Spieler-Charakter schon existiert, Werte aktualisieren
+                CharacterStats playerStats = FindObjectOfType<CharacterStats>();
+                if (playerStats != null)
+                {
+                    playerStats.currentHP = data.currentHP;
+                    playerStats.maxHP = data.maxHP;
+                }
+
                 return data;
             }
         }
@@ -69,6 +86,7 @@ public class SaveManager : MonoBehaviour
             return null;
         }
     }
+
 
     public void DeleteSave()
     {

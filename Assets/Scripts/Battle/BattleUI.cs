@@ -39,11 +39,10 @@ public class BattleUI : MonoBehaviour
             CharacterStats player = playerTeam[0];
             CharacterStats enemy = enemyTeam[0];
 
-            // Spielerinformationen setzen
             playerNameText.text = player.characterName + " - Lv. " + player.level;
             playerHPText.text = "HP: " + player.currentHP + "/" + player.maxHP;
-            playerHPBar.maxValue = player.maxHP;  // Maximalwert für HP-Bar setzen
-            playerHPBar.value = player.currentHP; // Aktuellen Wert setzen
+            playerHPBar.maxValue = player.maxHP;
+            playerHPBar.value = player.currentHP;
 
             // Gegnerinformationen setzen
             enemyNameText.text = enemy.characterName + " - Lv. " + enemy.level;
@@ -95,4 +94,5 @@ public void ShowBattleOptions(CharacterStats player)
     {
         BattleManager.instance.PlayerAttack(currentPlayer, BattleManager.instance.enemyTeam[0], attack);
     }
+
 }

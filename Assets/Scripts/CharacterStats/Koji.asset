@@ -19,3 +19,4 @@ MonoBehaviour:
   startDefense: 1
   element: Free
   type: Free
+  digivolutions: []

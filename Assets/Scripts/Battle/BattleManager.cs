@@ -9,6 +9,7 @@ public class BattleManager : MonoBehaviour
 {
     public static BattleManager instance;
     public BattleUI battleUI;
+    public BattleUIManager battleUIManager;
 
     [Header("Spieler & Gegner")]
     public CharacterStats currentPlayerTurn;
@@ -52,6 +53,15 @@ public class BattleManager : MonoBehaviour
         {
             Debug.LogError("Achtung: playerTeam wurde geleert!");
         }
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            if (currentPlayerTurn != null && currentPlayerTurn.isDigitized)
+            {
+                Debug.Log("R-Taste gedrückt: Rückdigitation wird eingeleitet.");
+                currentPlayerTurn.ToggleDigitation(false);
+                UpdateUIAfterDigivolution(); // UI nach Rückdigitieren aktualisieren
+            }
+        }
     }
     void SetupBattle()
     {
@@ -76,6 +86,20 @@ public class BattleManager : MonoBehaviour
         currentTurn = 0;
         playerTurn = true;
 
+
+
+        // Lade gespeicherte HP
+        if (PlayerPrefs.HasKey("CurrentHP_" + currentPlayerTurn.characterName))
+        {
+            currentPlayerTurn.currentHP = PlayerPrefs.GetInt("CurrentHP_" + currentPlayerTurn.characterName);
+            currentPlayerTurn.maxHP = PlayerPrefs.GetInt("MaxHP_" + currentPlayerTurn.characterName);
+            Debug.Log("Gespeicherte HP geladen für " + currentPlayerTurn.characterName + ": " + currentPlayerTurn.currentHP + "/" + currentPlayerTurn.maxHP);
+        }
+        else
+        {
+            currentPlayerTurn.currentHP = currentPlayerTurn.maxHP;
+            Debug.Log("Keine gespeicherten HP gefunden. Setze auf: " + currentPlayerTurn.maxHP);
+        }
 
         // UI setzen
         enemyNameText.text = enemy.characterName;
@@ -125,6 +149,8 @@ public class BattleManager : MonoBehaviour
         }
     }
 
+
+
     public void PlayerAttack(CharacterStats attacker, CharacterStats target, Attack chosenAttack)
     {
         ElementType targetElement;
@@ -151,6 +177,7 @@ public class BattleManager : MonoBehaviour
         {
             playerTurn = false; // Gegner ist jetzt dran!
             StartCoroutine(NextTurn());
+            battleUIManager.CloseAllPanels();
         }
     }
 
@@ -232,8 +259,23 @@ public class BattleManager : MonoBehaviour
         {
             currentPlayerTurn.ToggleDigitation(true);
             battleUI.ShowBattleOptions(currentPlayerTurn); // UI updaten
+            battleUIManager.CloseAllPanels();
+
+            // UI nach Digitation aktualisieren
+            UpdateUIAfterDigivolution();
         }
     }
+
+
+    public void UpdateUIAfterDigivolution()
+    {
+        if (currentPlayerTurn != null)
+        {
+            // UI mit den neuen Werten updaten
+            battleUI.SetupUI(playerTeam, enemyTeam);
+        }
+    }
+
     public void OnAttackButtonPressed()
     {
         Debug.Log("Attack-Button wurde geklickt!");
@@ -251,6 +293,7 @@ public class BattleManager : MonoBehaviour
         }
 
         PlayerAttack(currentPlayerTurn, enemy, currentPlayerTurn.attacks[0]); // Nutzt die erste Attacke in der Liste
+
     }
 
     IEnumerator EndBattleCoroutine(bool playerWon)
@@ -273,6 +316,45 @@ public class BattleManager : MonoBehaviour
     void EndBattle(bool playerWon)
     {
         StartCoroutine(EndBattleCoroutine(playerWon));
+
+        // Speichern der aktuellen HP vor dem Szenenwechsel
+        SavePlayerHP();
+
+        // Speichern der restlichen Charakterdaten
+        SaveCharacterStats();
+    }
+    private void SavePlayerHP()
+    {
+        foreach (CharacterStats player in playerTeam)
+        {
+            PlayerPrefs.SetInt("CurrentHP_" + player.characterName, player.currentHP);
+            PlayerPrefs.SetInt("MaxHP_" + player.characterName, player.maxHP);
+            PlayerPrefs.Save();
+            Debug.Log("HP gespeichert: " + player.characterName + " -> " + player.currentHP + "/" + player.maxHP);
+        }
+    }
+    private void SaveCharacterStats()
+    {
+        // Speichern der aktuellen Charakterdaten (z.B. nach dem Kampf)
+        foreach (CharacterStats player in playerTeam)
+        {
+            // Hier könntest du alle relevanten Daten wie XP, Level, HP, etc. speichern
+            Debug.Log("Speichern von: " + player.characterName);
+            SaveData data = new SaveData();
+            data.characterName = player.characterName;
+            data.level = player.level;
+            data.maxHP = player.maxHP;
+            data.currentHP = player.currentHP;
+            data.attack = player.attack;
+            data.defense = player.defense;
+            data.element = player.element;
+            data.type = player.type;
+            data.xp = player.xp;
+            data.xpToNextLevel = player.xpToNextLevel;
+
+            // Speichern mit dem SaveManager
+            SaveManager.instance.SaveGame(data);
+        }
     }
 
 

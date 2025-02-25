@@ -10,7 +10,7 @@ public class GameManager : MonoBehaviour
     public GameObject playerPrefab;
 
     private Vector3 defaultStartPosition = new Vector3(0, 0, 0); // Standard-Startposition
-
+   
 
     void Awake()
     {
@@ -51,6 +51,8 @@ public class GameManager : MonoBehaviour
         // **1. Speicherstand löschen**
         SaveManager.instance.DeleteSave();
 
+        PlayerPrefs.DeleteAll();
+
         // **2. Spielerposition & Fortschritt zurücksetzen**
         lastPlayerPosition = Vector3.zero;
         enemyToDestroy = ""; // Falls du Gegner speicherst
@@ -90,12 +92,30 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("Spieler konnte nicht gefunden werden! Speichere letzte bekannte Position.");
         }
 
+        // Hole die CharacterStats-Komponente
+        CharacterStats characterStats = player.GetComponent<CharacterStats>();
+
         SaveData data = new SaveData();
         data.SetPlayerPosition(lastPlayerPosition);
         data.sceneName = SceneManager.GetActiveScene().name;
 
         // **Jetzt wird der Gegnerstatus NUR gespeichert, wenn gespeichert wird**
         data.enemyToDestroy = enemyToDestroy;
+
+        // Speichern der Charakterdaten
+        if (characterStats != null)
+        {
+            data.characterName = characterStats.characterName;
+            data.level = characterStats.level;
+            data.maxHP = characterStats.maxHP;
+            data.currentHP = characterStats.currentHP;
+            data.attack = characterStats.attack;
+            data.defense = characterStats.defense;
+            data.element = characterStats.element;
+            data.type = characterStats.type;
+            data.xp = characterStats.xp;
+            data.xpToNextLevel = characterStats.xpToNextLevel;
+        }
 
         SaveManager.instance.SaveGame(data);
         Debug.Log("Spiel gespeichert! Position: " + lastPlayerPosition + ", Gegnerstatus: " + enemyToDestroy);
@@ -120,6 +140,29 @@ public class GameManager : MonoBehaviour
 
             // Szene laden & Spieler setzen
             StartCoroutine(LoadSceneAndPlacePlayer(data.sceneName, lastPlayerPosition));
+
+            // Setze die Charakterdaten
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                CharacterStats characterStats = player.GetComponent<CharacterStats>();
+                if (characterStats != null)
+                {
+                    characterStats.characterName = data.characterName;
+                    characterStats.level = data.level;
+                    characterStats.maxHP = data.maxHP;
+                    characterStats.currentHP = data.currentHP;
+                    characterStats.attack = data.attack;
+                    characterStats.defense = data.defense;
+                    characterStats.element = data.element;
+                    characterStats.type = data.type;
+                    characterStats.xp = data.xp;
+                    characterStats.xpToNextLevel = data.xpToNextLevel;
+
+                    // Setze den Digitation-Status zurück (immer auf "nicht digitiert" setzen)
+                    characterStats.ToggleDigitation(false); // Rückkehr zur Basisform
+                }
+            }
         }
         else
         {

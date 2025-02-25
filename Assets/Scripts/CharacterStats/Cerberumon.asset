@@ -19,5 +19,4 @@ MonoBehaviour:
   startDefense: 2
   element: Darkness
   type: Virus
-  digiElement: 
-  digiType: 
+  digivolutions: []

@@ -12,6 +12,13 @@ public class CharacterData : ScriptableObject
     public string type;
 
     [Header("Digitation Stats")]
-    public string digiElement;
-    public string digiType;
+    public Digivolution[] digivolutions; // Array für mehrere Digitationen
+}
+
+[System.Serializable]
+public class Digivolution
+{
+    public string digiName;    // Name der Digitation
+    public string digiElement; // Element der Digitation
+    public string digiType;    // Typ der Digitation
 }
