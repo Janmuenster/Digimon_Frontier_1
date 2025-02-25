@@ -216,6 +216,19 @@ public class BattleManager : MonoBehaviour
             StartCoroutine(NextTurn());
         }
     }
+    public void UpdateHPUI(CharacterStats character)
+    {
+        if (character == null) return;
+
+        // Hier müsstest du dein konkretes UI-Element updaten. 
+        // Angenommen du hast eine HP-Bar als Slider:
+        if (character.characterName == "Takuya") // Falls du speziell den Main-Charakter meinst
+        {
+            playerHPBar.value = (float)character.currentHP / character.maxHP;
+        }
+
+        Debug.Log(character.characterName + " HP aktualisiert: " + character.currentHP + "/" + character.maxHP);
+    }
 
 
     void NextRound()

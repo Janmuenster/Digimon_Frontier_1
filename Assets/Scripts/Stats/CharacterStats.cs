@@ -225,6 +225,10 @@ public class CharacterStats : MonoBehaviour
                 currentHP = 0;
                 Die();
             }
+            if (BattleManager.instance != null)
+            {
+                BattleManager.instance.UpdateHPUI(this);
+            }
         }
     }
 

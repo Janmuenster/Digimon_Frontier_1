@@ -8,8 +8,11 @@ public class CharacterData : ScriptableObject
     public int startMaxHP;
     public int startAttack;
     public int startDefense;
+    public int xp;
+    public int xpToNextLevel;
     public string element;
     public string type;
+    
 
     [Header("Digitation Stats")]
     public Digivolution[] digivolutions; // Array für mehrere Digitationen
