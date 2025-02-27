@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using UnityEngine.TextCore.Text;
 
 public class BattleManager : MonoBehaviour
 {
@@ -133,6 +134,8 @@ public class BattleManager : MonoBehaviour
         yield return null; // Warten, bis Werte gesetzt sind
         battleUI.SetupUI(playerTeam, enemyTeam);
     }
+
+
 
     IEnumerator NextTurn()
     {
@@ -369,6 +372,8 @@ public class BattleManager : MonoBehaviour
             SaveManager.instance.SaveGame(data);
         }
     }
+
+   
 
 
     public float GetElementMultiplier(ElementType attacker, ElementType defender)

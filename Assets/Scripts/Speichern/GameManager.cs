@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.TextCore.Text;
 
 public class GameManager : MonoBehaviour
 {
@@ -9,37 +11,135 @@ public class GameManager : MonoBehaviour
     public string enemyToDestroy = "";
     public GameObject playerPrefab;
 
+    public List<GameObject> allCharacterPrefabs = new List<GameObject>(); // Alle 6 Charaktere als Prefabs
+    public List<GameObject> availableCharacterPrefabs = new List<GameObject>(); // Freigeschaltete Charakter-Prefabs
+    public List<GameObject> selectedPlayerPrefabs = new List<GameObject>(); // Die 3 Kämpfer-Prefabs
+    public List<GameObject> enemyPrefabs = new List<GameObject>(); // Gegner-Prefabs für den Kampf
+    public bool isBossFight = false;
+
+    public List<GameObject> bossEnemies = new List<GameObject>(); // Liste für Bossgegner
+    public List<GameObject> randomEnemies = new List<GameObject>(); // Liste für normale Gegner
+
     private Vector3 defaultStartPosition = new Vector3(0, 0, 0); // Standard-Startposition
    
-
+    void Start()
+{
+    Debug.Log("GameManager aktiv. Spieler-Team:");
+    foreach (var player in selectedPlayerPrefabs)
+    {
+        Debug.Log(player.name);
+    }
+}
     void Awake()
     {
         if (instance == null)
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
-            SceneManager.sceneLoaded += OnSceneLoaded;
+            Debug.Log("GameManager initialisiert.");
+        }
+        else
+        {
+            Debug.LogWarning("Doppelter GameManager gefunden, zerstöre diesen!");
+            Destroy(gameObject);
+        }
+    }
+    public enum BattleType { WildBattle, BossBattle }
 
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
+    public void StartBattle(BattleType battleType, List<GameObject> enemies)
+    {
+        isBossFight = (battleType == BattleType.BossBattle);
+        Debug.Log($"Starte Kampf: {battleType}");
+
+        // Übergib die Liste der Gegner basierend auf dem Typ des Kampfes
+        if (isBossFight)
+        {
+            enemyPrefabs = new List<GameObject>(bossEnemies); // Boss-Gegner
+        }
+        else
+        {
+            enemyPrefabs = new List<GameObject>(randomEnemies); // Normale Gegner
+        }
+
+        SceneManager.LoadScene("BattleScene"); // Lade die Kampf-Szene
+    }
+
+    // Gegner und Spieler für den Kampf setzen
+    public void SetBattleParticipants(List<GameObject> selectedPlayerPrefabs, List<GameObject> enemyPrefabs, bool bossFight)
+    {
+        Debug.Log("SetBattleParticipants aufgerufen");
+        this.selectedPlayerPrefabs = selectedPlayerPrefabs; // Setze die Spieler für den Kampf
+        isBossFight = bossFight; // Setze, ob es ein Bosskampf ist
+
+        if (enemyPrefabs == null || enemyPrefabs.Count == 0)
+        {
+            Debug.LogError("Keine Gegner im SetBattleParticipants-Call!");
+            return;
+        }
+
+        // Ausgabe der Namen der Gegner, die übergeben wurden
+        foreach (var enemy in enemyPrefabs)
+        {
+            Debug.Log("Gegner, der übergeben wurde: " + enemy.name);
+        }
+
+        // Spawne die Gegner in der Battle-Szene, wenn diese geladen wurde
+        StartCoroutine(SpawnEnemiesAfterSceneLoad(enemyPrefabs));
+    }
+    private IEnumerator SpawnEnemiesAfterSceneLoad(List<GameObject> enemyPrefabs)
+    {
+        // Warte, bis die Szene vollständig geladen ist
+        yield return new WaitForSeconds(1f); // Warte etwas länger, um sicherzustellen, dass die Szene wirklich vollständig geladen ist
+
+        Debug.Log("Beginne mit dem Spawn der Gegner...");
+
+        // Spawne die Gegner an zufälligen Positionen (oder an festen Positionen je nach Bedarf)
+        foreach (var enemyPrefab in enemyPrefabs)
+        {
+            if (enemyPrefab != null)
             {
-                lastPlayerPosition = player.transform.position;
-                Debug.Log("Startposition gespeichert: " + lastPlayerPosition);
+                // Zufällige Position (oder eine andere Logik nach deinen Wünschen)
+                Vector3 spawnPosition = new Vector3(Random.Range(-5f, 5f), Random.Range(-3f, 3f), 0);
+                GameObject spawnedEnemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+
+                // Debug-Ausgabe
+                Debug.Log($"Gegner gespawnt: {enemyPrefab.name} an Position {spawnPosition}");
+            }
+            else
+            {
+                Debug.LogWarning("Fehler: Ein Gegner-Prefab war null und konnte nicht gespawnt werden!");
+            }
+        }
+    }
+
+    public void UnlockCharacter(GameObject newCharacterPrefab)
+    {
+        if (!availableCharacterPrefabs.Contains(newCharacterPrefab))
+        {
+            availableCharacterPrefabs.Add(newCharacterPrefab);
+            Debug.Log(newCharacterPrefab.name + " wurde freigeschaltet!");
+        }
+    }
+
+
+    public void SelectBattleTeam(List<GameObject> chosenCharacters)
+    {
+        if (chosenCharacters.Count == 3)
+        {
+            selectedPlayerPrefabs = new List<GameObject>(chosenCharacters);
+            Debug.Log("Neues Team gewählt!");
+            foreach (var character in selectedPlayerPrefabs)
+            {
+                Debug.Log(character.name);
             }
         }
         else
         {
-            Destroy(gameObject);
-            return;
-        }
-
-        // Falls Speicherstand existiert -> Frage anzeigen
-        if (SaveManager.instance.SaveExists() && SceneManager.GetActiveScene().name == "MainMenu")
-        {
-            Debug.Log("Ein Speicherstand existiert bereits!");
-            // Hier kannst du ein UI-Popup anzeigen lassen.
+            Debug.LogError("Genau 3 Charaktere müssen ausgewählt werden!");
         }
     }
+
+
     public void StartNewGame()
     {
         if (SaveManager.instance == null)
@@ -64,6 +164,15 @@ public class GameManager : MonoBehaviour
         // **4. Automatisch speichern, sobald das neue Spiel gestartet wurde**
         StartCoroutine(SaveAfterSceneLoad());
     }
+
+    // Gegner + Spieler für den Kampf setzen
+    public void SetBattleParticipants(List<GameObject> enemies, List<GameObject> enemyPrefabs, List<GameObject> selectedEnemyPrefabs, bool bossFight)
+    {
+        selectedPlayerPrefabs = new List<GameObject>(PartyManager.instance.battleParty);
+        this.enemyPrefabs = new List<GameObject>(enemyPrefabs);
+        isBossFight = bossFight;
+    }
+
 
     // Warte kurz, bis die Szene geladen ist, dann speichere
     private IEnumerator SaveAfterSceneLoad()

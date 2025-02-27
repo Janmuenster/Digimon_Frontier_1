@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class CharacterStats : MonoBehaviour
 {
+    public Character character;
+
     [Header("Datenquelle")]
     public CharacterData characterData; // Ziehe hier das ScriptableObject rein!
 
