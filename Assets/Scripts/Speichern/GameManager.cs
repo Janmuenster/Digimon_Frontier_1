@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.TextCore.Text;
+
 
 public class GameManager : MonoBehaviour
 {
@@ -11,103 +11,150 @@ public class GameManager : MonoBehaviour
     public string enemyToDestroy = "";
     public GameObject playerPrefab;
 
+    public BattleType currentBattleType;
     public List<GameObject> allCharacterPrefabs = new List<GameObject>(); // Alle 6 Charaktere als Prefabs
     public List<GameObject> availableCharacterPrefabs = new List<GameObject>(); // Freigeschaltete Charakter-Prefabs
     public List<GameObject> selectedPlayerPrefabs = new List<GameObject>(); // Die 3 Kämpfer-Prefabs
-    public List<GameObject> enemyPrefabs = new List<GameObject>(); // Gegner-Prefabs für den Kampf
-    public bool isBossFight = false;
+    public List<GameObject> selectedEnemyPrefabs = new List<GameObject>(); // Die 3 Kämpfer-Prefabs
+    public List<GameObject> currentEnemies = new List<GameObject>(); // Hier speichern wir die Gegner
 
-    public List<GameObject> bossEnemies = new List<GameObject>(); // Liste für Bossgegner
-    public List<GameObject> randomEnemies = new List<GameObject>(); // Liste für normale Gegner
 
+
+    public List<Transform> enemySpawnPositions; // Liste von Positionen, an denen die Gegner spawnen sollen
     private Vector3 defaultStartPosition = new Vector3(0, 0, 0); // Standard-Startposition
-   
-    void Start()
-{
-    Debug.Log("GameManager aktiv. Spieler-Team:");
-    foreach (var player in selectedPlayerPrefabs)
+    private string currentArea;
+
+    private void Awake()
     {
-        Debug.Log(player.name);
-    }
-}
-    void Awake()
-    {
-        if (instance == null)
+        if (instance != null && instance != this)
         {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-            Debug.Log("GameManager initialisiert.");
-        }
-        else
-        {
-            Debug.LogWarning("Doppelter GameManager gefunden, zerstöre diesen!");
             Destroy(gameObject);
+            return;
         }
+        instance = this;
+        DontDestroyOnLoad(gameObject);
     }
-    public enum BattleType { WildBattle, BossBattle }
 
-    public void StartBattle(BattleType battleType, List<GameObject> enemies)
+
+    void Start()
     {
-        isBossFight = (battleType == BattleType.BossBattle);
-        Debug.Log($"Starte Kampf: {battleType}");
-
-        // Übergib die Liste der Gegner basierend auf dem Typ des Kampfes
-        if (isBossFight)
-        {
-            enemyPrefabs = new List<GameObject>(bossEnemies); // Boss-Gegner
-        }
-        else
-        {
-            enemyPrefabs = new List<GameObject>(randomEnemies); // Normale Gegner
-        }
-
-        SceneManager.LoadScene("BattleScene"); // Lade die Kampf-Szene
+        // Suche nach allen Spawn-Positionen in der Szene
+        GameManager.instance.SetEnemySpawnPositions(new List<Transform>(FindObjectsOfType<Transform>()));
+        Debug.Log("Spawn-Positionen in BattleScene gesetzt.");
+      
     }
+
+    public void SetCurrentArea(string areaName)
+    {
+        currentArea = areaName;  // Setzt das Gebiet im GameManager
+        Debug.Log("Aktuelles Gebiet: " + currentArea);
+    }
+
+    public string GetCurrentArea()
+    {
+        return currentArea;
+    }
+
+
+    // Die Battle-Funktion anpassen, um den `EnemyManager` zu verwenden
+    public void StartBattle(BattleType battleType, string area)
+    {
+        Debug.Log($"Starte Kampf in Gebiet {area}: {battleType}");
+
+        currentBattleType = battleType;  // Speichere den aktuellen Kampf-Typ
+
+        currentEnemies = EnemyManager.instance.GetEnemiesForBattle(battleType, area); // Speichern!
+
+        SceneManager.LoadScene("BattleScene");
+
+        StartCoroutine(SpawnEnemiesAfterSceneLoad()); // Spawne nach dem Szenenwechsel
+    }
+
 
     // Gegner und Spieler für den Kampf setzen
     public void SetBattleParticipants(List<GameObject> selectedPlayerPrefabs, List<GameObject> enemyPrefabs, bool bossFight)
     {
         Debug.Log("SetBattleParticipants aufgerufen");
         this.selectedPlayerPrefabs = selectedPlayerPrefabs; // Setze die Spieler für den Kampf
-        isBossFight = bossFight; // Setze, ob es ein Bosskampf ist
+        Debug.Log("Anzahl der ausgewählten Spieler: " + selectedPlayerPrefabs.Count);
 
-        if (enemyPrefabs == null || enemyPrefabs.Count == 0)
+        // Gehe sicher, dass die Gegner auch gesetzt wurden:
+        this.selectedEnemyPrefabs = enemyPrefabs;
+        Debug.Log("Anzahl der ausgewählten Gegner: " + selectedEnemyPrefabs.Count);
+
+        // Es könnte sein, dass hier noch eine Prüfung auf `null` erfolgen sollte
+        if (this.selectedPlayerPrefabs.Count == 0 || this.selectedEnemyPrefabs.Count == 0)
         {
-            Debug.LogError("Keine Gegner im SetBattleParticipants-Call!");
+            Debug.LogError("Es wurden keine Spieler oder Gegner gesetzt!");
             return;
         }
+    }
 
-        // Ausgabe der Namen der Gegner, die übergeben wurden
-        foreach (var enemy in enemyPrefabs)
+
+    private IEnumerator LoadBattleSceneAndSpawnEnemies()
+    {
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("BattleScene");
+        while (!asyncLoad.isDone)
         {
-            Debug.Log("Gegner, der übergeben wurde: " + enemy.name);
+            yield return null; // Warte, bis die Szene geladen ist
         }
 
-        // Spawne die Gegner in der Battle-Szene, wenn diese geladen wurde
-        StartCoroutine(SpawnEnemiesAfterSceneLoad(enemyPrefabs));
+        yield return new WaitForSeconds(0.5f); // Sicherheitspause
+
+        Debug.Log("Szene wurde geladen. Spawne Gegner...");
+        SetBattleParticipants(selectedPlayerPrefabs, selectedEnemyPrefabs, currentBattleType == BattleType.BossBattle);
     }
-    private IEnumerator SpawnEnemiesAfterSceneLoad(List<GameObject> enemyPrefabs)
+    private IEnumerator SpawnEnemiesAfterSceneLoad()
     {
-        // Warte, bis die Szene vollständig geladen ist
-        yield return new WaitForSeconds(1f); // Warte etwas länger, um sicherzustellen, dass die Szene wirklich vollständig geladen ist
+        // Warten, bis die Szene vollständig geladen ist
+        yield return new WaitForSeconds(1f);
 
+        // Weiter mit dem Spawn-Prozess
         Debug.Log("Beginne mit dem Spawn der Gegner...");
+        Debug.Log($"Anzahl gespeicherter Gegner: {currentEnemies.Count}");
 
-        // Spawne die Gegner an zufälligen Positionen (oder an festen Positionen je nach Bedarf)
-        foreach (var enemyPrefab in enemyPrefabs)
+        int enemyCount = Mathf.Min(currentEnemies.Count, enemySpawnPositions.Count);
+
+        for (int i = 0; i < enemyCount; i++)
         {
-            if (enemyPrefab != null)
+            if (currentEnemies[i] != null && enemySpawnPositions[i] != null)
             {
-                // Zufällige Position (oder eine andere Logik nach deinen Wünschen)
-                Vector3 spawnPosition = new Vector3(Random.Range(-5f, 5f), Random.Range(-3f, 3f), 0);
-                GameObject spawnedEnemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
-
-                // Debug-Ausgabe
-                Debug.Log($"Gegner gespawnt: {enemyPrefab.name} an Position {spawnPosition}");
+                GameObject spawnedEnemy = Instantiate(currentEnemies[i], enemySpawnPositions[i].position, Quaternion.identity);
+                Debug.Log($"Gegner gespawnt: {currentEnemies[i].name} an Position {enemySpawnPositions[i].position}");
             }
             else
             {
-                Debug.LogWarning("Fehler: Ein Gegner-Prefab war null und konnte nicht gespawnt werden!");
+                Debug.LogWarning("Fehler: Ein Gegner oder eine Spawn-Position ist null!");
+            }
+        }
+    }
+
+
+    // BattleType-Enum für den Kampf
+    public enum BattleType { WildBattle, BossBattle }
+
+    // Setzt die Positionen für das Spawn der Gegner
+    public void SetEnemySpawnPositions(List<Transform> spawnPositions)
+    {
+        enemySpawnPositions = new List<Transform>(spawnPositions);
+        Debug.Log("Enemy spawn positions übernommen.");
+    }
+
+    public void SavePlayerPosition(Vector3 position)
+    {
+        lastPlayerPosition = position;
+        Debug.Log("Spielerposition gespeichert: " + lastPlayerPosition);
+    }
+
+    public void RemoveEnemy()
+    {
+        if (!string.IsNullOrEmpty(enemyToDestroy))
+        {
+            GameObject enemy = GameObject.Find(enemyToDestroy);
+            if (enemy != null)
+            {
+                Destroy(enemy);
+                Debug.Log("Gegner entfernt: " + enemyToDestroy);
             }
         }
     }
@@ -120,7 +167,6 @@ public class GameManager : MonoBehaviour
             Debug.Log(newCharacterPrefab.name + " wurde freigeschaltet!");
         }
     }
-
 
     public void SelectBattleTeam(List<GameObject> chosenCharacters)
     {
@@ -139,7 +185,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
+    // Startet ein neues Spiel
     public void StartNewGame()
     {
         if (SaveManager.instance == null)
@@ -148,40 +194,27 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // **1. Speicherstand löschen**
+        // Speicherstand löschen und Neustart
         SaveManager.instance.DeleteSave();
-
         PlayerPrefs.DeleteAll();
-
-        // **2. Spielerposition & Fortschritt zurücksetzen**
         lastPlayerPosition = Vector3.zero;
-        enemyToDestroy = ""; // Falls du Gegner speicherst
+        enemyToDestroy = "";
 
-        // **3. Neustart mit kompletter Spiel-Reset**
         SceneManager.LoadScene("Overworld"); // Falls das Spiel IMMER im Hauptmenü beginnt
         Debug.Log("Neues Spiel gestartet! Alles zurückgesetzt.");
 
-        // **4. Automatisch speichern, sobald das neue Spiel gestartet wurde**
         StartCoroutine(SaveAfterSceneLoad());
     }
 
-    // Gegner + Spieler für den Kampf setzen
-    public void SetBattleParticipants(List<GameObject> enemies, List<GameObject> enemyPrefabs, List<GameObject> selectedEnemyPrefabs, bool bossFight)
-    {
-        selectedPlayerPrefabs = new List<GameObject>(PartyManager.instance.battleParty);
-        this.enemyPrefabs = new List<GameObject>(enemyPrefabs);
-        isBossFight = bossFight;
-    }
-
-
-    // Warte kurz, bis die Szene geladen ist, dann speichere
+    // Speichern, wenn die Szene geladen ist
     private IEnumerator SaveAfterSceneLoad()
     {
-        yield return new WaitForSeconds(1f); // Warte 1 Sekunde, damit die Szene sicher geladen ist
-        SaveGame(); // Speichert das neue Spiel
+        yield return new WaitForSeconds(1f); // Warte, bis die Szene sicher geladen ist
+        SaveGame();
         Debug.Log("Neues Spiel automatisch gespeichert!");
     }
 
+    // Speicherfunktion
     public void SaveGame()
     {
         if (SaveManager.instance == null)
@@ -190,7 +223,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // **Aktuelle Spielerposition speichern**
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -201,17 +233,13 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("Spieler konnte nicht gefunden werden! Speichere letzte bekannte Position.");
         }
 
-        // Hole die CharacterStats-Komponente
         CharacterStats characterStats = player.GetComponent<CharacterStats>();
-
         SaveData data = new SaveData();
         data.SetPlayerPosition(lastPlayerPosition);
         data.sceneName = SceneManager.GetActiveScene().name;
 
-        // **Jetzt wird der Gegnerstatus NUR gespeichert, wenn gespeichert wird**
         data.enemyToDestroy = enemyToDestroy;
 
-        // Speichern der Charakterdaten
         if (characterStats != null)
         {
             data.characterName = characterStats.characterName;
@@ -230,8 +258,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("Spiel gespeichert! Position: " + lastPlayerPosition + ", Gegnerstatus: " + enemyToDestroy);
     }
 
-
-
+    // Lade das Spiel
     public void LoadGame()
     {
         if (SaveManager.instance == null)
@@ -244,34 +271,10 @@ public class GameManager : MonoBehaviour
         if (data != null)
         {
             lastPlayerPosition = data.GetPlayerPosition();
-            enemyToDestroy = data.enemyToDestroy; // **Nur setzen, wenn geladen wird!**
+            enemyToDestroy = data.enemyToDestroy;
             Debug.Log("Spiel geladen! Position: " + lastPlayerPosition + ", Gegnerstatus: " + enemyToDestroy);
 
-            // Szene laden & Spieler setzen
             StartCoroutine(LoadSceneAndPlacePlayer(data.sceneName, lastPlayerPosition));
-
-            // Setze die Charakterdaten
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                CharacterStats characterStats = player.GetComponent<CharacterStats>();
-                if (characterStats != null)
-                {
-                    characterStats.characterName = data.characterName;
-                    characterStats.level = data.level;
-                    characterStats.maxHP = data.maxHP;
-                    characterStats.currentHP = data.currentHP;
-                    characterStats.attack = data.attack;
-                    characterStats.defense = data.defense;
-                    characterStats.element = data.element;
-                    characterStats.type = data.type;
-                    characterStats.xp = data.xp;
-                    characterStats.xpToNextLevel = data.xpToNextLevel;
-
-                    // Setze den Digitation-Status zurück (immer auf "nicht digitiert" setzen)
-                    characterStats.ToggleDigitation(false); // Rückkehr zur Basisform
-                }
-            }
         }
         else
         {
@@ -279,11 +282,11 @@ public class GameManager : MonoBehaviour
         }
     }
 
-
+    // Lade die Szene und setze den Spieler
     private IEnumerator LoadSceneAndPlacePlayer(string sceneName, Vector3 position)
     {
         SceneManager.LoadScene(sceneName);
-        yield return new WaitForSeconds(0.5f); // Warte kurz, bis Szene geladen ist
+        yield return new WaitForSeconds(0.5f);
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -293,106 +296,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Spieler konnte nicht gefunden werden!");
-        }
-    }
-
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        if (scene.name == "Overworld")
-        {
-            Debug.Log("Overworld geladen, versuche Spieler zu platzieren...");
-
-            // Suche den Spieler
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-
-            if (player == null)
-            {
-                Debug.LogWarning("Kein Spieler gefunden, erstelle neuen Spieler!");
-
-                if (playerPrefab == null)
-                {
-                    Debug.LogError("FEHLER: `playerPrefab` ist NICHT im Inspector gesetzt!");
-                    return;
-                }
-
-                // Falls kein Spieler existiert, erstelle einen an der letzten bekannten Position oder Standardposition
-                Vector3 spawnPosition = lastPlayerPosition != Vector3.zero ? lastPlayerPosition : defaultStartPosition;
-                player = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
-                Debug.Log("Neuer Spieler erstellt an Position: " + spawnPosition);
-            }
-            else
-            {
-                // Falls Spieler existiert, setze ihn direkt auf die gespeicherte Position
-                player.transform.position = lastPlayerPosition;
-                Debug.Log("Spieler direkt an Position gesetzt: " + lastPlayerPosition);
-            }
-
-            // Stelle sicher, dass der Spieler aktiv ist
-            player.SetActive(true);
-            Debug.Log("Spieler aktiviert.");
-
-            // Entferne den Gegner aus der Overworld
-            RemoveEnemy();
-        }
-    }
-
-
-    private IEnumerator RestorePlayerAfterDelay()
-    {
-        yield return new WaitForSeconds(0.1f); // Minimal warten, falls nötig
-
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-
-        if (player == null)
-        {
-            Debug.LogWarning("Kein Spieler gefunden, erstelle neuen Spieler!");
-
-            if (playerPrefab == null)
-            {
-                Debug.LogError("FEHLER: `playerPrefab` ist NICHT im Inspector gesetzt!");
-                yield break;
-            }
-
-            // Erstelle den Player an der gespeicherten Position oder Standardposition
-            Vector3 spawnPosition = lastPlayerPosition != Vector3.zero ? lastPlayerPosition : defaultStartPosition;
-            player = Instantiate(playerPrefab, spawnPosition, Quaternion.identity);
-            Debug.Log("Neuer Spieler erstellt an Position: " + spawnPosition);
-        }
-
-        // Stelle sicher, dass der Spieler die richtige Position hat, BEVOR er aktiviert wird
-        if (player != null)
-        {
-            player.transform.position = lastPlayerPosition;
-            Debug.Log("Spieler direkt an Position gesetzt: " + lastPlayerPosition);
-
-            player.SetActive(true);
-            Debug.Log("Spieler aktiviert.");
-        }
-        else
-        {
             Debug.LogError("Spieler konnte nicht gefunden oder erstellt werden!");
-        }
-    }
-
-
-
-    public void SavePlayerPosition(Vector3 position)
-    {
-        lastPlayerPosition = position;
-        Debug.Log("Spielerposition gespeichert: " + lastPlayerPosition);
-    }
-
-    public void RemoveEnemy()
-    {
-        if (!string.IsNullOrEmpty(enemyToDestroy))
-        {
-            GameObject enemy = GameObject.Find(enemyToDestroy);
-            if (enemy != null)
-            {
-                Destroy(enemy);
-                Debug.Log("Gegner entfernt: " + enemyToDestroy);
-            }
         }
     }
 }

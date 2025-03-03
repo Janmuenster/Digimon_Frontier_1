@@ -1,33 +1,85 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEditor;
 
 public class BattleTrigger : MonoBehaviour
 {
-    public bool isBossFight; // Ist es ein Bosskampf?
-    private List<GameObject> bossPrefabs;
-    private List<GameObject> wildEnemyPrefabs;
+    [SerializeField]
 
-    // Diese Listen sind nicht mehr nötig, da die Gegner aus dem GameManager geladen werden
-    // public List<GameObject> enemyCharacters;  // Liste der Gegner
-    // public List<GameObject> bossPrefabs;  // Boss-Enemy-Prefabs
-    // public List<GameObject> wildEnemyPrefabs; // Wilde Gegner-Prefabs
+    public string areaName; // Gebiet wählen
+    public EnemyManager enemyManager;
 
-    private void OnTriggerEnter2D(Collider2D other)
+    void Start()
+    {
+        // Hole den EnemyManager zur Laufzeit, wenn es nötig ist
+        enemyManager = EnemyManager.instance;
+
+        // Optional: Sicherheitscheck, wenn keine Instanz gefunden wird
+        if (enemyManager == null)
+        {
+            Debug.LogError("EnemyManager instance nicht gefunden! Stelle sicher, dass der EnemyManager im Spiel existiert.");
+        }
+    }
+
+    IEnumerator LoadBattleScene(List<GameObject> enemies)
+    {
+        yield return SceneManager.LoadSceneAsync("BattleScene"); // Warten, bis die Szene geladen ist
+        yield return new WaitForSeconds(0.5f); // Zusätzliche Sicherheitspause
+
+        SpawnEnemies(enemies); // Gegner spawnen
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
-            Debug.Log("BattleTrigger betreten. Starte den Kampf...");
+            // Debugging: Name des Gebiets ausgeben
+            Debug.Log("Betritt Gebiet: " + areaName);
 
-            // Wähle die Gegner basierend auf dem Kampf-Typ
-            List<GameObject> selectedEnemyPrefabs = isBossFight ? bossPrefabs : wildEnemyPrefabs;
+            GameManager.instance.SetCurrentArea(areaName);
 
-            // Übergebe die Gegner an den GameManager
-           
-            GameManager.instance.SetBattleParticipants(GameManager.instance.selectedPlayerPrefabs, selectedEnemyPrefabs, isBossFight);
+            // Hier rufen wir die Gegner für das Gebiet ab
+            List<GameObject> enemies = enemyManager.GetEnemiesForBattle(GameManager.instance.currentBattleType, areaName);
 
-            // Lade die Battle-Szene
-            SceneManager.LoadScene("BattleScene");
+            if (enemies.Count == 0)
+            {
+                Debug.LogError("Keine Gegner für dieses Gebiet gefunden!");
+                return; // Keine Szene laden, wenn keine Gegner existieren
+            }
+
+            StartCoroutine(LoadBattleScene(enemies));
+        }
+    }
+
+    private IEnumerator SpawnEnemiesWithDelay(List<GameObject> enemies)
+    {
+        // Warte eine kurze Zeit, um sicherzustellen, dass spawnPositions gesetzt wurden
+        yield return new WaitForSeconds(0.5f);
+
+        // Jetzt kannst du die Gegner spawnnen, sicher dass enemySpawnPositions korrekt gesetzt sind
+        SpawnEnemies(enemies);
+    }
+
+    void SpawnEnemies(List<GameObject> enemies)
+    {
+        // Zugriff auf enemySpawnPositions über GameManager
+        List<Transform> enemySpawnPositions = GameManager.instance.enemySpawnPositions;
+
+        foreach (var enemy in enemies)
+        {
+            if (enemy != null && enemySpawnPositions.Count > 0)
+            {
+                // Füge hier eine Position aus der enemySpawnPositions-Liste hinzu
+                Transform spawnPosition = enemySpawnPositions[Random.Range(0, enemySpawnPositions.Count)];
+                GameObject spawnedEnemy = Instantiate(enemy, spawnPosition.position, Quaternion.identity);
+                Debug.Log($"Gegner {enemy.name} wurde gespawnt an {spawnPosition.position}");
+            }
+            else
+            {
+                Debug.LogWarning("Keine Spawn-Positionen oder Gegner vorhanden!");
+            }
         }
     }
 }

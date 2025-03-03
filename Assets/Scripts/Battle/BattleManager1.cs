@@ -6,61 +6,90 @@ public class BattleManager1 : MonoBehaviour
     public static BattleManager1 instance;
     public BattleUI battleUI;
 
+    private bool isBossFight;
+
+    public List<GameObject> enemyPrefabs; // Liste von Gegner-Prefabs
+    public List<Transform> enemySpawnPositions; // Liste von Positionen, an denen die Gegner spawnen sollen.
     public Transform playerSpawnPoint;
     public Transform enemySpawnPoint;
 
     public List<GameObject> selectedPlayers = new List<GameObject>(); // Die 3 aktiven Kämpfer
-    public List<GameObject> bossEnemies; // Liste für Bossgegner
-    public List<GameObject> randomEnemies; // Liste für normale Gegner
-
     private List<GameObject> playerObjects = new List<GameObject>();
     private List<GameObject> enemyObjects = new List<GameObject>();
 
+    private string currentArea; // Variable, die das aktuelle Gebiet speichert
 
     void Start()
     {
         StartBattle();
     }
-    void Awake()
+
+    private void Awake()
     {
-        if (instance == null)
-        {
-            instance = this;
-        }
-        else
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+        instance = this;
+        DontDestroyOnLoad(gameObject);
     }
+
     void StartBattle()
     {
-        Debug.Log("StartBattle aufgerufen");
+        Debug.Log("StartBattle wird aufgerufen."); // Debug-Log
+        currentArea = GameManager.instance.GetCurrentArea();  // Hole das aktuelle Gebiet vom GameManager
+        Debug.Log("Aktuelles Gebiet: " + currentArea);
 
         selectedPlayers = new List<GameObject>(PartyManager.instance.battleParty);
+        GameManager.instance.SetEnemySpawnPositions(enemySpawnPositions);
 
-        // Prüfen, ob enemyPrefabs befüllt ist
-        if (GameManager.instance.enemyPrefabs == null || GameManager.instance.enemyPrefabs.Count == 0)
+        LoadEnemiesForBattle();
+
+        // Prüfe, ob Spawn-Positionen korrekt zugewiesen wurden
+        if (enemySpawnPositions.Count == 0)
         {
-            Debug.LogError("enemyPrefabs ist leer oder null!");
+            Debug.LogError("Keine Spawn-Positionen für Gegner zugewiesen!");
         }
         else
         {
-            Debug.Log("enemyPrefabs enthält " + GameManager.instance.enemyPrefabs.Count + " Gegner.");
+            Debug.Log("Anzahl der Spawn-Positionen: " + enemySpawnPositions.Count);
         }
 
-        // Weitere Logik...
-        SpawnCharacters();
+        if (enemyPrefabs.Count == 0)
+        {
+            Debug.LogError("Keine Gegner-Prefabs gefunden!");
+            return;
+        }
+        Debug.Log("Fehler durch enemyPrefabs, aber nach Aufruf von LoadEnemiesForBattle.");
+        SpawnCharacters(); // Gegner und Spieler spawnen
     }
 
 
 
+    void LoadEnemiesForBattle()
+    {
+        List<GameObject> enemies = EnemyManager.instance.GetEnemiesForBattle(GameManager.BattleType.WildBattle, currentArea);
+
+        if (enemies.Count > 0)
+        {
+            enemyPrefabs = new List<GameObject>(enemies);
+            Debug.Log("Gegner erfolgreich in enemyPrefabs gespeichert! Anzahl: " + enemyPrefabs.Count);
+        }
+        else
+        {
+            Debug.LogError("Keine Gegner für das Gebiet " + currentArea + " gefunden!");
+        }
+    }
 
 
     void SpawnCharacters()
     {
+        Debug.Log("SpawnCharacters wird aufgerufen."); // Debug-Log
+
         Debug.Log("Anzahl der ausgewählten Spieler: " + GameManager.instance.selectedPlayerPrefabs.Count);
 
-        //  Spieler instanziieren
+        // Spieler instanziieren
         for (int i = 0; i < GameManager.instance.selectedPlayerPrefabs.Count; i++)
         {
             GameObject playerPrefab = GameManager.instance.selectedPlayerPrefabs[i];
@@ -78,7 +107,7 @@ public class BattleManager1 : MonoBehaviour
                 Debug.Log("Spieler erfolgreich gespawnt: " + newPlayer.name);
             }
 
-            // Charakterdaten setzen (holt CharacterStats von Character-Objekt)
+            // Charakterdaten setzen, aber nur, wenn nicht schon vorhanden
             CharacterStats stats = newPlayer.GetComponent<CharacterStats>();
             if (stats == null)
             {
@@ -86,115 +115,98 @@ public class BattleManager1 : MonoBehaviour
             }
             else
             {
-                Debug.Log("CharacterStats gefunden bei: " + newPlayer.name);
-                Character character = stats.character; // Wir gehen davon aus, dass 'CharacterStats' das 'Character'-Objekt hat.
-                newPlayer.GetComponent<CharacterDisplay>().SetCharacter(character);
-            }
-        }
-
-
-        // Gegner instanziieren
-        if (GameManager.instance.isBossFight)
-        {
-            // Bosskampf - Zufälligen Bossgegner aus der Liste auswählen
-            SpawnRandomBossEnemy();
-        }
-        else
-        {
-            // Normaler Kampf - Zufällige Gegner aus der Liste auswählen
-            SpawnRandomEnemies();
-        }
-    }
-
-    void SpawnRandomBossEnemy()
-    {
-        if (bossEnemies.Count > 0)
-        {
-            // Zufällig einen Bossgegner aus der Liste auswählen
-            GameObject bossPrefab = bossEnemies[Random.Range(0, bossEnemies.Count)];
-            Vector3 spawnPos = enemySpawnPoint.position;
-            GameObject bossEnemy = Instantiate(bossPrefab, spawnPos, Quaternion.identity);
-            Debug.Log("Bossgegner gespawnt: " + bossEnemy.name);
-
-            // Hier kannst du auch CharacterStats setzen, wenn du sie hast
-            CharacterStats stats = bossEnemy.GetComponent<CharacterStats>();
-            if (stats != null)
-            {
                 Character character = stats.character;
-                bossEnemy.GetComponent<CharacterDisplay>().SetCharacter(character);
+                if (newPlayer.GetComponent<CharacterDisplay>() != null)
+                {
+                    newPlayer.GetComponent<CharacterDisplay>().SetCharacter(character);
+                }
             }
-            else
+
+
+            // Füge das hier ein, um zu prüfen, ob SpawnRandomEnemies ausgeführt wird
+            Debug.Log("Führe SpawnRandomEnemies aus...");
+            SpawnRandomEnemies(); // Gegner spawnen
+        }
+
+        void SpawnRandomEnemies()
+        {
+
+            Debug.LogError("Spawnenemies wird aufgerufen");
+
+            if (enemySpawnPositions.Count == 0)
             {
-                Debug.LogError("CharacterStats für Bossgegner fehlen!");
+                Debug.LogError("Keine Spawn-Positionen zugewiesen!");
+                return;
             }
 
-            enemyObjects.Add(bossEnemy);
-        }
-        else
-        {
-            Debug.LogError("Keine Bossgegner im Inspector zugewiesen!");
-        }
-    }
+            // Hole die normalen Gegner aus dem EnemyManager basierend auf dem Gebiet
+            List<GameObject> wildEnemiesForArea = EnemyManager.instance.GetEnemiesForBattle(GameManager.BattleType.WildBattle, currentArea);
 
-    void SpawnRandomEnemies()
-    {
-        if (randomEnemies.Count > 0)
-        {
-            // Anzahl der Gegner, die gespawnt werden sollen (z.B. 3 Gegner)
-            int enemyCount = 3; // Diese Zahl kannst du nach Belieben ändern
+            // Debugging: Prüfen, ob Gegner gefunden wurden
+            if (wildEnemiesForArea.Count == 0)
+            {
+                Debug.LogError("Keine normalen Gegner im aktuellen Gebiet zugewiesen! Gebiet: " + currentArea);
+                return; // Kein Spawn von Gegnern, wenn keine gefunden wurden
+            }
+
+            // Prüfen, ob genügend Spawn-Positionen vorhanden sind
+            if (enemySpawnPositions.Count == 0)
+            {
+                Debug.LogError("Keine Spawn-Positionen zugewiesen!");
+                return; // Kein Spawn, wenn keine Positionen da sind
+            }
+
+            // Zufällige Anzahl an Gegnern (z.B. zwischen 1 und 3)
+            int enemyCount = Random.Range(1, Mathf.Min(4, enemySpawnPositions.Count + 1));
+            Debug.Log("Anzahl der zu spawnenden Gegner: " + enemyCount);
+
+            // Stelle sicher, dass die Positionen gemischt werden
+            List<Transform> availableSpawnPositions = new List<Transform>(enemySpawnPositions);
+            ShuffleList(availableSpawnPositions); // Positionen mischen
+
+            // Spawn der Gegner
             for (int i = 0; i < enemyCount; i++)
             {
-                GameObject enemyPrefab = randomEnemies[Random.Range(0, randomEnemies.Count)];
-                Vector3 spawnPos = enemySpawnPoint.position + new Vector3(i * 2.0f, 0, 0);
-                GameObject newEnemy = Instantiate(enemyPrefab, spawnPos, Quaternion.identity);
+                int randomIndex = Random.Range(0, wildEnemiesForArea.Count);
+                GameObject enemyPrefab = wildEnemiesForArea[randomIndex];
 
-                // Charakterdaten setzen (holt CharacterStats von Character-Objekt)
-                CharacterStats stats = newEnemy.GetComponent<CharacterStats>();
-                if (stats != null)
+                if (enemyPrefab == null)
                 {
-                    Character character = stats.character;
-                    newEnemy.GetComponent<CharacterDisplay>().SetCharacter(character);
+                    Debug.LogError("Fehler: Das Gegner-Prefab ist null! Überprüfe die Gegnerliste.");
+                    continue; // Falls das Prefab null ist, überspringen
+                }
+
+                Transform spawnPoint = availableSpawnPositions[i];
+                Debug.Log("Gegner wird gespawnt: " + enemyPrefab.name + " an Position: " + spawnPoint.position);
+
+                GameObject newEnemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+
+                if (newEnemy == null)
+                {
+                    Debug.LogError("Fehler beim Instanziieren des Gegners!");
                 }
                 else
                 {
-                    Debug.LogError("CharacterStats-Komponente fehlt bei: " + enemyPrefab.name);
+                    Debug.Log("Gegner erfolgreich gespawnt: " + newEnemy.name);
+                    enemyObjects.Add(newEnemy);
                 }
-
-                enemyObjects.Add(newEnemy);
             }
         }
-        else
-        {
-            Debug.LogError("Keine normalen Gegner im Inspector zugewiesen!");
-        }
-    }
 
 
-GameObject GetCharacterPrefab(string characterName, List<GameObject> prefabList)
-    {
-        foreach (GameObject prefab in prefabList)
+
+
+
+        // Methode zum Mischen der Liste (Fisher-Yates Algorithmus)
+        void ShuffleList<T>(List<T> list)
         {
-            if (prefab.name == characterName) //  Findet das richtige Prefab per Name
+            for (int i = list.Count - 1; i > 0; i--)
             {
-                return prefab;
+                int j = Random.Range(0, i + 1);
+                T temp = list[i];
+                list[i] = list[j];
+                list[j] = temp;
             }
         }
-        return prefabList[0]; // Falls nichts gefunden, Standard-Prefab nehmen
-    }
-    public void SwapCharacter(int battleIndex, GameObject newCharacter)
-    {
-        if (!PartyManager.instance.battleParty.Contains(newCharacter))
-        {
-            Debug.LogWarning("Dieser Charakter ist nicht in der Party!");
-            return;
-        }
-
-        selectedPlayers[battleIndex] = newCharacter;
-        UpdateBattleUI(); // UI aktualisieren
-    }
-
-    private void UpdateBattleUI()
-    {
-        Debug.Log("UI aktualisieren: Kämpfende Charaktere geändert.");
     }
 }

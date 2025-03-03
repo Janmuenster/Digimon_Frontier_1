@@ -2981,15 +2981,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   battleUI: {fileID: 1295569633}
+  enemyPrefabs: []
+  enemySpawnPositions:
+  - {fileID: 724587458}
+  - {fileID: 2016796942}
+  - {fileID: 1905095002}
   playerSpawnPoint: {fileID: 1001883599}
   enemySpawnPoint: {fileID: 724587458}
-  selectedPlayers:
-  - {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
-  bossEnemies:
-  - {fileID: 7988424483450504316, guid: 7e2aa902ca134024f8a9a0335c35588b, type: 3}
-  randomEnemies:
-  - {fileID: 6591058492785272987, guid: 310230067c89edd40944ffcc82499a62, type: 3}
-  - {fileID: 1104908037181630217, guid: 66b80cc78612f95478bf8f4fad86ce78, type: 3}
+  selectedPlayers: []
 --- !u!1 &572621825
 GameObject:
   m_ObjectHideFlags: 0
@@ -4017,7 +4016,7 @@ Transform:
   m_GameObject: {fileID: 724587457}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.48, y: -0.07706696, z: -0.082035065}
+  m_LocalPosition: {x: 3.65, y: -1.49, z: -0.082035065}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4322,13 +4321,11 @@ MonoBehaviour:
   lastPlayerPosition: {x: 0, y: 0, z: 0}
   enemyToDestroy: 
   playerPrefab: {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
+  currentBattleType: 0
   allCharacterPrefabs: []
   availableCharacterPrefabs: []
   selectedPlayerPrefabs: []
-  enemyPrefabs: []
-  isBossFight: 0
-  bossEnemies: []
-  randomEnemies: []
+  enemySpawnPositions: []
 --- !u!4 &888911964
 Transform:
   m_ObjectHideFlags: 0
@@ -7427,6 +7424,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1896085722}
   m_CullTransparentMesh: 1
+--- !u!1 &1905095001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1905095002}
+  m_Layer: 0
+  m_Name: EnemyStation (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1905095002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1905095001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.48, y: -2.86, z: -0.082035065}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1950694725
 GameObject:
   m_ObjectHideFlags: 0
@@ -7577,6 +7605,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &2016796941
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2016796942}
+  m_Layer: 0
+  m_Name: EnemyStation (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2016796942
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2016796941}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 6.67, y: -2.08, z: -0.082035065}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2027177785
 GameObject:
   m_ObjectHideFlags: 0
@@ -8219,6 +8278,8 @@ SceneRoots:
   - {fileID: 1559633215}
   - {fileID: 569070164}
   - {fileID: 724587458}
+  - {fileID: 2016796942}
+  - {fileID: 1905095002}
   - {fileID: 1001883599}
   - {fileID: 1295569634}
   - {fileID: 195326257}
