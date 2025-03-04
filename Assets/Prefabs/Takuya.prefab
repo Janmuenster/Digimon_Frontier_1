@@ -201,19 +201,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27dfaacb68559f44bad444cc2976b728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  character:
+    characterName: 
+    level: 0
+    maxHP: 0
+    currentHP: 0
+    attack: 0
+    defense: 0
+    element: 
+    type: 
   characterData: {fileID: 11400000, guid: 667d44e7b405e3e4ba73a824481e0148, type: 2}
   normalSprite: {fileID: 21300000, guid: 20cdcc48a23807a4289c6bd98725d681, type: 3}
   digivolvedSprite: {fileID: 21300000, guid: 9590d8394b4a32c42b9d3e5686835d42, type: 3}
   characterName: 
-  level: 0
-  maxHP: 0
-  currentHP: 0
-  attack: 0
-  defense: 0
-  element: 
-  type: 
+  level: 1
+  maxHP: 10
+  currentHP: 10
+  attack: 2
+  speed: 2
+  defense: 1
+  attackPower: 0
+  element: Free
+  type: Free
   xp: 0
-  xpToNextLevel: 100
+  xpToNextLevel: 0
+  currentDigivolutionIndex: 0
   isDigitized: 0
   attacks: []
 --- !u!95 &5478848075683700094

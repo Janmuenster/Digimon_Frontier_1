@@ -1280,6 +1280,9 @@ MonoBehaviour:
   - {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
   selectedPlayerPrefabs:
   - {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
+  selectedEnemyPrefabs:
+  - {fileID: 6591058492785272987, guid: 310230067c89edd40944ffcc82499a62, type: 3}
+  currentEnemies: []
   enemySpawnPositions: []
 --- !u!4 &1704278991
 Transform:

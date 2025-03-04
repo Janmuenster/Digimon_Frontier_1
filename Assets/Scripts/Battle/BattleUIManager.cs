@@ -1,66 +1,140 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class BattleUIManager : MonoBehaviour
 {
-    [Header("UI Panels")]
-    public GameObject attackPanel;
-    public GameObject digivolvePanel;
-    public GameObject itemPanel;
+    public static BattleUIManager instance;
+    public GameObject attackButton; // Referenz auf die Angriffs-Schaltfläche
 
-    [Header("Buttons")]
-    public Button attackButton;
-    public Button digivolveButton;
-    public Button itemButton;
-    public Button fleeButton;
+    [Header("Spieler UI Elemente")]
+    public List<CharacterUI> playerUIElements;
 
-    private GameObject activePanel = null;
-    private bool isBossBattle = false; // Setze dies entsprechend der Kampfsituation
+    [Header("Gegner UI Elemente")]
+    public List<CharacterUI> enemyUIElements;
 
-    void Start()
+    private void Awake()
     {
-        attackButton.onClick.AddListener(() => TogglePanel(attackPanel));
-        digivolveButton.onClick.AddListener(() => TogglePanel(digivolvePanel));
-        itemButton.onClick.AddListener(() => TogglePanel(itemPanel));
-        fleeButton.onClick.AddListener(TryToFlee);
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
     }
 
-    void TogglePanel(GameObject panel)
+    public void SetupUI(List<CharacterStats> playerTeam, List<CharacterStats> enemyTeam)
     {
-        if (activePanel == panel)
-        {
-            panel.SetActive(!panel.activeSelf);
-            if (!panel.activeSelf)
-                activePanel = null;
-        }
-        else
-        {
-            if (activePanel != null)
-                activePanel.SetActive(false);
 
-            panel.SetActive(true);
-            activePanel = panel;
+        for (int i = 0; i < playerUIElements.Count; i++)
+        {
+            if (i < playerTeam.Count)
+            {
+                playerUIElements[i].Setup(playerTeam[i]);
+            }
+            else
+            {
+                playerUIElements[i].Hide();
+            }
+        }
+
+        for (int i = 0; i < enemyUIElements.Count; i++)
+        {
+            if (i < enemyTeam.Count)
+            {
+                enemyUIElements[i].Setup(enemyTeam[i]);
+            }
+            else
+            {
+                enemyUIElements[i].Hide();
+            }
+            Debug.Log("SetupUI wird ausgeführt. Spieler: " + playerTeam[i].characterName + ", Level: " + playerTeam[i].level);
+
         }
     }
 
-    void TryToFlee()
+
+    public void UpdateCharacterUI(CharacterStats character)
     {
-        if (isBossBattle)
+        foreach (var ui in playerUIElements)
         {
-            Debug.Log("Flucht ist in Bosskämpfen nicht möglich!");
+            if (ui.character == character)
+            {
+                ui.UpdateUI();
+                return;
+            }
         }
-        else
+        foreach (var ui in enemyUIElements)
         {
-            Debug.Log("Fluchtversuch!");
-            // Implementiere Flucht-Logik hier
+            if (ui.character == character)
+            {
+                ui.UpdateUI();
+                return;
+            }
         }
     }
-    public void CloseAllPanels()
+
+
+    public void ShowAttackButton(bool show)
     {
-        attackPanel.SetActive(false);
-        itemPanel.SetActive(false);
-        digivolvePanel.SetActive(false);
+        // Zeige oder verstecke die Angriffs-Schaltfläche
+        attackButton.SetActive(show);
+    }
+
+    public void OnAttackButtonClicked()
+    {
+        // Wenn der Angriffsbutton geklickt wird, führe den Angriff aus
+        BattleManager1.instance.PlayerAttack(); // Hier rufst du die PlayerAttack-Methode auf
+    }
+
+[System.Serializable]
+    public class CharacterUI
+    {
+        public GameObject uiPanel;
+        public TextMeshProUGUI nameText;
+        public TextMeshProUGUI levelText;
+        public Slider hpSlider;
+        public Slider xpSlider;
+        public CharacterStats character;
+
+        public void Setup(CharacterStats character)
+        {
+            this.character = character;
+            uiPanel.SetActive(true);
+            nameText.text = character.characterName;
+            levelText.text = "Lvl: " + character.level;
+            hpSlider.maxValue = character.maxHP;
+            hpSlider.value = character.currentHP;
+
+            if (xpSlider != null)
+            {
+                xpSlider.maxValue = character.xpToNextLevel;
+                xpSlider.value = character.xp;
+            }
+        }
+
+        public void UpdateUI()
+        {
+            if (character == null) return;
+            nameText.text = character.characterName;
+            levelText.text = "Lvl: " + character.level;
+            hpSlider.value = character.currentHP;
+
+            if (xpSlider != null)
+            {
+                xpSlider.value = character.xp;
+            }
+        }
+
+
+
+
+
+        public void Hide()
+        {
+            uiPanel.SetActive(false);
+        }
+
     }
 }

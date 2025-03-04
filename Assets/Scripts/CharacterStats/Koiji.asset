@@ -17,6 +17,9 @@ MonoBehaviour:
   startMaxHP: 80
   startAttack: 20
   startDefense: 15
+  startSpeed: 20
+  xp: 0
+  xpToNextLevel: 0
   element: Free
   type: Free
   digivolutions: []

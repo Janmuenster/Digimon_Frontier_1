@@ -17,6 +17,7 @@ MonoBehaviour:
   startMaxHP: 8
   startAttack: 2
   startDefense: 1
+  startSpeed: 1
   xp: 0
   xpToNextLevel: 0
   element: Fire

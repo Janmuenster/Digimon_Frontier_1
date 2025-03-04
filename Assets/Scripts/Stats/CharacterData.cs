@@ -8,6 +8,7 @@ public class CharacterData : ScriptableObject
     public int startMaxHP;
     public int startAttack;
     public int startDefense;
+    public int startSpeed;
     public int xp;
     public int xpToNextLevel;
     public string element;

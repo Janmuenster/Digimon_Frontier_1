@@ -199,6 +199,12 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.DeleteAll();
         lastPlayerPosition = Vector3.zero;
         enemyToDestroy = "";
+        // Setze die HP des Spielers auf den Maximalwert zurück
+        foreach (var player in selectedPlayerPrefabs)
+        {
+            CharacterStats stats = player.GetComponent<CharacterStats>();
+            stats.currentHP = stats.maxHP; // Setze die HP des Spielers zurück
+        }
 
         SceneManager.LoadScene("Overworld"); // Falls das Spiel IMMER im Hauptmenü beginnt
         Debug.Log("Neues Spiel gestartet! Alles zurückgesetzt.");

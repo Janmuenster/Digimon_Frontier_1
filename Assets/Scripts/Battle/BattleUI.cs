@@ -64,35 +64,6 @@ public class BattleUI : MonoBehaviour
             Debug.LogError("SetupUI: PlayerTeam oder EnemyTeam ist leer!");
         }
     }
-
-
-public void ShowBattleOptions(CharacterStats player)
-    {
-        digivolveButton.SetActive(!player.isDigitized); // Zeigt den Button nur, wenn der Spieler noch nicht digitisiert ist
-    }
-
-    public void OnDigivolveButtonPressed()
-    {
-        BattleManager.instance.DigivolvePlayer();
-    }
-    public void ShowAttackOptions(CharacterStats player)
-    {
-        currentPlayer = player;
-
-        foreach (Transform child in attackButtonPanel)
-            Destroy(child.gameObject);
-
-        foreach (Attack attack in player.attacks)
-        {
-            GameObject button = Instantiate(attackButtonPrefab, attackButtonPanel);
-            button.GetComponentInChildren<Text>().text = attack.attackName;
-            button.GetComponent<Button>().onClick.AddListener(() => SelectAttack(attack));
-        }
-    }
-
-    void SelectAttack(Attack attack)
-    {
-        BattleManager.instance.PlayerAttack(currentPlayer, BattleManager.instance.enemyTeam[0], attack);
-    }
-
 }
+
+ 

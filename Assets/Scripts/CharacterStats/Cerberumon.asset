@@ -17,6 +17,9 @@ MonoBehaviour:
   startMaxHP: 14
   startAttack: 3
   startDefense: 2
+  startSpeed: 3
+  xp: 0
+  xpToNextLevel: 0
   element: Darkness
   type: Virus
   digivolutions: []
