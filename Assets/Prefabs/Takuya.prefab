@@ -216,7 +216,7 @@ MonoBehaviour:
   characterName: 
   level: 1
   maxHP: 10
-  currentHP: -9
+  currentHP: 10
   attack: 2
   speed: 2
   defense: 1

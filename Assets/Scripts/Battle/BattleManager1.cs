@@ -1,11 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;  // Import für TextMeshPro
 
 public class BattleManager1 : MonoBehaviour
 {
     public static BattleManager1 instance;
     public BattleUIManager battleUIManager;
+    public TextMeshProUGUI turnIndicatorText;  // Das TextMeshPro-UI-Element, das den aktuellen Zug anzeigt
 
     private int currentTurn = 0; // Gibt an, wessen Zug es gerade ist (0 = Spieler, 1 = Gegner)
     private bool isPlayerTurn = true; // Gibt an, ob der Spieler am Zug ist
@@ -67,11 +69,7 @@ public class BattleManager1 : MonoBehaviour
         }
         Debug.Log("Fehler durch enemyPrefabs, aber nach Aufruf von LoadEnemiesForBattle.");
         SpawnCharacters(); // Gegner und Spieler spawnen
-
-
     }
-
-
 
     void LoadEnemiesForBattle()
     {
@@ -87,7 +85,6 @@ public class BattleManager1 : MonoBehaviour
             Debug.LogError("Keine Gegner für das Gebiet " + currentArea + " gefunden!");
         }
     }
-
 
     void SpawnCharacters()
     {
@@ -136,7 +133,6 @@ public class BattleManager1 : MonoBehaviour
 
         // Nachdem alle Charaktere gespawnt sind, initialisiere die UI
         StartCoroutine(DelayedUIInitialization());
-
     }
 
     IEnumerator DelayedUIInitialization()
@@ -147,7 +143,6 @@ public class BattleManager1 : MonoBehaviour
         // Initialisiere die UI nach der Verzögerung
         InitializeBattleTeams();
     }
-
 
     void InitializeBattleTeams()
     {
@@ -176,10 +171,8 @@ public class BattleManager1 : MonoBehaviour
         battleUIManager.SetupUI(playerTeam, enemyTeam);
     }
 
-
     void SpawnRandomEnemies()
     {
-
         Debug.LogError("Spawnenemies wird aufgerufen");
 
         if (enemySpawnPositions.Count == 0)
@@ -242,10 +235,6 @@ public class BattleManager1 : MonoBehaviour
         }
     }
 
-
-
-
-
     // Methode zum Mischen der Liste (Fisher-Yates Algorithmus)
     void ShuffleList<T>(List<T> list)
     {
@@ -257,27 +246,28 @@ public class BattleManager1 : MonoBehaviour
             list[j] = temp;
         }
     }
+
     void StartTurn()
     {
         if (isPlayerTurn)
         {
             // Zeige dem Spieler die möglichen Aktionen (z.B. Angriff, Verteidigung)
             battleUIManager.ShowAttackButton(true); // Zeige die Angriffs-Schaltfläche an
+            turnIndicatorText.text = "Spieler ist am Zug"; // Zeige an, dass der Spieler am Zug ist
         }
         else
         {
             // Der Gegner führt eine Aktion aus
             ExecuteEnemyTurn();
+            turnIndicatorText.text = "Gegner ist am Zug"; // Zeige an, dass der Gegner am Zug ist
         }
     }
-
     // Methode für den Spielerangriff
     public void PlayerAttack()
     {
         if (isPlayerTurn)
         {
             // Spieler greift an
-            // Wählen Sie hier den Angriff und die Schadensberechnung aus.
             ExecuteAttack(selectedPlayers[0], enemyObjects[0]);
 
             // Nach dem Angriff ist der Zug vorbei und der Gegner ist dran
@@ -333,7 +323,7 @@ public class BattleManager1 : MonoBehaviour
     // Methode, die den Gegnerzug ausführt
     void ExecuteEnemyTurn()
     {
-        // Logik für den Gegnerzug, z.B. Angriff auf den Spieler
+        // Der Gegner greift den ersten Spieler an
         GameObject enemy = enemyObjects[0];
         GameObject player = selectedPlayers[0];
 
