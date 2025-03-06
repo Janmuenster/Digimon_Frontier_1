@@ -368,14 +368,21 @@ public class BattleManager1 : MonoBehaviour
     // Methode, die den Gegnerzug ausführt
     void ExecuteEnemyTurn()
     {
-        // Der Gegner greift den ersten Spieler an
-        GameObject enemy = enemyObjects[0];
-        GameObject player = selectedPlayers[0];
+        if (enemyObjects.Count == 0 || playerObjects.Count == 0)
+        {
+            Debug.LogError("Es gibt keine Gegner oder Spieler für den Kampf!");
+            return;
+        }
 
-        ExecuteAttack(enemy, player); // Beispiel: Gegner greift den Spieler an
+        // Gegner greift den ersten Spieler an
+        GameObject enemy = enemyObjects[0];
+        GameObject player = playerObjects[0]; // Nimm das tatsächlich instanzierte Objekt!
+
+        ExecuteAttack(enemy, player); // Gegner greift den Spieler an
 
         // Der Zug ist vorbei, der Spieler ist wieder dran
         isPlayerTurn = true;
         EndTurn();
     }
+
 }
