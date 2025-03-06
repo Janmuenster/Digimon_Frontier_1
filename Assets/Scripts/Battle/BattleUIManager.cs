@@ -88,13 +88,13 @@ public class BattleUIManager : MonoBehaviour
         BattleManager1.instance.PlayerAttack(); // Hier rufst du die PlayerAttack-Methode auf
     }
 
-[System.Serializable]
+    [System.Serializable]
     public class CharacterUI
     {
         public GameObject uiPanel;
         public TextMeshProUGUI nameText;
         public TextMeshProUGUI levelText;
-        public Slider hpSlider;
+        public Image hpBar; // Ändere Slider zu Image
         public Slider xpSlider;
         public CharacterStats character;
 
@@ -104,8 +104,8 @@ public class BattleUIManager : MonoBehaviour
             uiPanel.SetActive(true);
             nameText.text = character.characterName;
             levelText.text = "Lvl: " + character.level;
-            hpSlider.maxValue = character.maxHP;
-            hpSlider.value = character.currentHP;
+
+            UpdateHealthBar();
 
             if (xpSlider != null)
             {
@@ -119,7 +119,7 @@ public class BattleUIManager : MonoBehaviour
             if (character == null) return;
             nameText.text = character.characterName;
             levelText.text = "Lvl: " + character.level;
-            hpSlider.value = character.currentHP;
+            UpdateHealthBar();
 
             if (xpSlider != null)
             {
@@ -127,14 +127,17 @@ public class BattleUIManager : MonoBehaviour
             }
         }
 
-
-
-
+        private void UpdateHealthBar()
+        {
+            if (hpBar != null)
+            {
+                hpBar.fillAmount = (float)character.currentHP / character.maxHP;
+            }
+        }
 
         public void Hide()
         {
             uiPanel.SetActive(false);
         }
-
     }
 }

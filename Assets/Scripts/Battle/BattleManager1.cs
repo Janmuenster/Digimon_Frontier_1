@@ -2,12 +2,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;  // Import für TextMeshPro
+using UnityEngine.UI; // Wichtig für UI-Elemente!
 
 public class BattleManager1 : MonoBehaviour
 {
     public static BattleManager1 instance;
     public BattleUIManager battleUIManager;
     public TextMeshProUGUI turnIndicatorText;  // Das TextMeshPro-UI-Element, das den aktuellen Zug anzeigt
+
+    // UI Buttons
+    public Button attackButton;
+    public Button defendButton;
+    public Button skillButton;
+
+    // UI Panels (Fenster für Aktionen)
+    public GameObject attackPanel;
+    public GameObject defendPanel;
+    public GameObject skillPanel;
 
     private int currentTurn = 0; // Gibt an, wessen Zug es gerade ist (0 = Spieler, 1 = Gegner)
     private bool isPlayerTurn = true; // Gibt an, ob der Spieler am Zug ist
@@ -28,6 +39,11 @@ public class BattleManager1 : MonoBehaviour
     void Start()
     {
         StartBattle();
+
+        // Event Listener für Buttons
+        attackButton.onClick.AddListener(() => TogglePanel(attackPanel));
+        defendButton.onClick.AddListener(() => TogglePanel(defendPanel));
+        skillButton.onClick.AddListener(() => TogglePanel(skillPanel));
     }
 
     private void Awake()
@@ -251,16 +267,38 @@ public class BattleManager1 : MonoBehaviour
     {
         if (isPlayerTurn)
         {
-            // Zeige dem Spieler die möglichen Aktionen (z.B. Angriff, Verteidigung)
-            battleUIManager.ShowAttackButton(true); // Zeige die Angriffs-Schaltfläche an
-            turnIndicatorText.text = "Spieler ist am Zug"; // Zeige an, dass der Spieler am Zug ist
+            battleUIManager.ShowAttackButton(true);
+            turnIndicatorText.text = "Spieler ist am Zug";
         }
         else
         {
-            // Der Gegner führt eine Aktion aus
             ExecuteEnemyTurn();
-            turnIndicatorText.text = "Gegner ist am Zug"; // Zeige an, dass der Gegner am Zug ist
+            turnIndicatorText.text = "Gegner ist am Zug";
         }
+    }
+
+    // **Fenster umschalten, sodass immer nur eines aktiv ist**
+    private void TogglePanel(GameObject panelToToggle)
+    {
+        // Falls das gewünschte Panel bereits aktiv ist, dann schließen
+        if (panelToToggle.activeSelf)
+        {
+            panelToToggle.SetActive(false);
+        }
+        else
+        {
+            CloseAllPanels(); // Erst alle schließen
+            panelToToggle.SetActive(true); // Dann nur das gewünschte öffnen
+        }
+    }
+
+
+    // **Alle Aktionsfenster schließen**
+    private void CloseAllPanels()
+    {
+        attackPanel.SetActive(false);
+        defendPanel.SetActive(false);
+        skillPanel.SetActive(false);
     }
     // Methode für den Spielerangriff
     public void PlayerAttack()
@@ -272,9 +310,16 @@ public class BattleManager1 : MonoBehaviour
 
             // Nach dem Angriff ist der Zug vorbei und der Gegner ist dran
             isPlayerTurn = false;
+            ExecuteAction(); // Fenster schließen nach der Aktion
             EndTurn();
         }
     }
+
+    public void ExecuteAction()
+    {
+        CloseAllPanels(); // Fenster schließen
+    }
+
 
     // Methode zum Ausführen des Angriffs
     void ExecuteAttack(GameObject attacker, GameObject defender)

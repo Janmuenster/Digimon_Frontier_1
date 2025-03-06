@@ -1277,9 +1277,9 @@ MonoBehaviour:
   playerPrefab: {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
   currentBattleType: 0
   allCharacterPrefabs:
+  - {fileID: 1104908037181630217, guid: 66b80cc78612f95478bf8f4fad86ce78, type: 3}
   - {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
   - {fileID: 834944019879837820, guid: 02111dc2195be5a4489eb63ea351a8ab, type: 3}
-  - {fileID: 1104908037181630217, guid: 66b80cc78612f95478bf8f4fad86ce78, type: 3}
   availableCharacterPrefabs:
   - {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
   selectedPlayerPrefabs:
@@ -2414,6 +2414,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tommy
       objectReference: {fileID: 0}
+    - target: {fileID: 4144819529592095531, guid: 7f1a2d857126d3c4892b7026d024ac78, type: 3}
+      propertyPath: m_SortingOrder
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5426583503854352738, guid: 7f1a2d857126d3c4892b7026d024ac78, type: 3}
       propertyPath: m_LocalPosition.x
       value: -8.804
@@ -2527,10 +2531,6 @@ PrefabInstance:
     - target: {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
       propertyPath: m_Name
       value: Takuya
-      objectReference: {fileID: 0}
-    - target: {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4685158982351747327, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
       propertyPath: m_LocalPosition.x
