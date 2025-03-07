@@ -1283,7 +1283,7 @@ MonoBehaviour:
   availableCharacterPrefabs:
   - {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
   selectedPlayerPrefabs:
-  - {fileID: 1104908037181630217, guid: 66b80cc78612f95478bf8f4fad86ce78, type: 3}
+  - {fileID: 834944019879837820, guid: 02111dc2195be5a4489eb63ea351a8ab, type: 3}
   selectedEnemyPrefabs:
   - {fileID: 6591058492785272987, guid: 310230067c89edd40944ffcc82499a62, type: 3}
   currentEnemies: []
