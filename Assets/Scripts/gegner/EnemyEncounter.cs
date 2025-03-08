@@ -10,13 +10,13 @@ public class EnemyEncounter : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             // Speichere die Position, bevor der Kampf beginnt
-            GameManager.instance.SavePlayerPosition(other.transform.position);
+           // GameManager.instance.SavePlayerPosition(other.transform.position);
 
             // Deaktiviere den Spieler in der Overworld
             other.gameObject.SetActive(false);
 
             // Setze Gegner-ID für spätere Zerstörung
-            GameManager.instance.enemyToDestroy = gameObject.name;
+            //GameManager.instance.enemyToDestroy = gameObject.name;
 
             // Wechsel in die Kampfszene
             SceneManager.LoadScene("BattleScene");

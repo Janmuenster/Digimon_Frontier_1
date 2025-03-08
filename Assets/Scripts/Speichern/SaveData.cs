@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -8,7 +9,7 @@ public class SaveData
     public float posY;
     public float posZ;
     public string sceneName;
-    public string enemyToDestroy; // <-- Neu hinzugefügt für Gegnerstatus
+    public List<string> enemiesToDestroy = new List<string>(); // Geändert in eine Liste
 
     public string characterName;
     public int level;
@@ -21,7 +22,6 @@ public class SaveData
     public int xp;
     public int xpToNextLevel;
     public bool isDigitized;
-
 
     // Getter & Setter für die Position
     public Vector3 GetPlayerPosition()

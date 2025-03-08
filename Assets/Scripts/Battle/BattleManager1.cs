@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;  // Import für TextMeshPro
 using UnityEngine.UI; // Wichtig für UI-Elemente!
+using UnityEngine.SceneManagement;
 
 public class BattleManager1 : MonoBehaviour
 {
@@ -54,7 +55,6 @@ public class BattleManager1 : MonoBehaviour
             return;
         }
         instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 
     void StartBattle()
@@ -189,7 +189,7 @@ public class BattleManager1 : MonoBehaviour
 
     void SpawnRandomEnemies()
     {
-        Debug.LogError("Spawnenemies wird aufgerufen");
+        Debug.Log("Spawnenemies wird aufgerufen");
 
         if (enemySpawnPositions.Count == 0)
         {
@@ -214,8 +214,8 @@ public class BattleManager1 : MonoBehaviour
             return; // Kein Spawn, wenn keine Positionen da sind
         }
 
-        // Zufällige Anzahl an Gegnern (z.B. zwischen 1 und 3)
-        int enemyCount = Random.Range(1, Mathf.Min(4, enemySpawnPositions.Count + 1));
+        // Zufällige Anzahl an Gegnern (z.B. zwischen 1 und 3) nachdem .Min( muss eine 4 für 3 random gegner
+        int enemyCount = Random.Range(1, Mathf.Min(2, enemySpawnPositions.Count + 1));
         Debug.Log("Anzahl der zu spawnenden Gegner: " + enemyCount);
 
         // Stelle sicher, dass die Positionen gemischt werden
@@ -383,6 +383,104 @@ public class BattleManager1 : MonoBehaviour
         // Der Zug ist vorbei, der Spieler ist wieder dran
         isPlayerTurn = true;
         EndTurn();
+    }
+    private bool AreAllEnemiesDefeated()
+    {
+        return enemyObjects.Count == 0;
+    }
+
+    // Wird aufgerufen, wenn ein Gegner besiegt wurde
+    public void OnEnemyDefeated(GameObject defeatedEnemy)
+    {
+        enemyObjects.Remove(defeatedEnemy); // Entferne den besiegten Gegner aus der Liste
+        //battleUIManager.UpdateEnemyUI(); // Aktualisiere die UI, um den entfernten Gegner widerzuspiegeln
+
+        if (AreAllEnemiesDefeated())
+        {
+            StartCoroutine(EndBattleSequence()); // Starte die Endbattle-Sequenz, wenn alle Gegner besiegt sind
+        }
+    }
+
+    // Coroutine für die Endbattle-Sequenz
+    private IEnumerator EndBattleSequence()
+    {
+        Debug.Log("Alle Gegner besiegt! Kampf endet...");
+        turnIndicatorText.text = "Alle Gegner besiegt!"; // Aktualisiere den Text, um das Kampfende anzuzeigen
+
+        // Speichere die aktualisierten Charakterstatistiken im GameManager
+        SaveCharacterStats();
+
+        List<string> enemiesToDestroy = new List<string>();
+        foreach (var enemy in enemyObjects)
+        {
+            enemiesToDestroy.Add(enemy.name);
+        }
+        GameManager.instance.enemiesToDestroy = enemiesToDestroy;
+
+
+
+        yield return new WaitForSeconds(0.5f); // Warte 2 Sekunden
+
+        ReturnToPreviousScene(); // Rufe die Methode auf, um zur vorherigen Szene zurückzukehren
+    }
+
+    void SaveCharacterStats()
+    {
+        // Durchlaufe alle Spielerobjekte und speichere ihre Statistiken
+        foreach (var playerObject in playerObjects)
+        {
+            CharacterStats stats = playerObject.GetComponent<CharacterStats>();
+            if (stats != null)
+            {
+                // Hier speicherst du die Statistiken im GameManager. Du könntest auch eine separate
+                // Datenstruktur verwenden, um die Statistiken zu speichern und später zu laden.
+                // Zum Beispiel:
+                GameManager.instance.SaveCharacterStats(stats);
+            }
+        }
+    }
+
+    // Methode, um zur vorherigen Szene zurückzukehren
+    private void ReturnToPreviousScene()
+    {
+        Debug.Log("Rückkehr zur vorherigen Szene...");
+
+        // Stelle sicher, dass GameManager existiert
+        if (GameManager.instance != null)
+        {
+            // Lade die vorherige Szene
+            SceneManager.LoadScene(GameManager.instance.previousSceneName);
+
+            // Starte eine Coroutine, um die Spielerposition nach dem Laden der Szene zu setzen
+            StartCoroutine(RepositionPlayerAfterSceneLoad());
+
+            // Zerstöre das BattleManager-Objekt, um Duplikate zu vermeiden
+            Destroy(gameObject);
+        }
+        else
+        {
+            Debug.LogError("GameManager-Instanz nicht gefunden!");
+        }
+    }
+
+    private System.Collections.IEnumerator RepositionPlayerAfterSceneLoad()
+    {
+        // Warte, bis das Ende des Frames erreicht ist.  Das gibt der Szene Zeit zum Laden.
+        yield return new WaitForEndOfFrame();
+
+        // Finde das Spielerobjekt (wieder) in der neuen Szene
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+        if (player != null)
+        {
+            // Setze die Position des Spielers
+            player.transform.position = GameManager.instance.lastPlayerPosition;
+            Debug.Log("Spieler repositioniert zu: " + GameManager.instance.lastPlayerPosition);
+        }
+        else
+        {
+            Debug.LogError("Spieler-Objekt mit Tag 'Player' nicht gefunden!");
+        }
     }
 
 }

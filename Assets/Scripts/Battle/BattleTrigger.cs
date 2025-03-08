@@ -35,10 +35,17 @@ public class BattleTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
+            Debug.Log("Spieler in BattleTrigger eingetreten: " + gameObject.name);
+            GameManager.instance.SetLastBattleTrigger(gameObject);
+            Debug.Log("lastbattletrigger " + gameObject.name + "gespeichert");
+
             // Debugging: Name des Gebiets ausgeben
             Debug.Log("Betritt Gebiet: " + areaName);
 
             GameManager.instance.SetCurrentArea(areaName);
+
+
+            GameManager.instance.StartBattle();
 
             // Hier rufen wir die Gegner für das Gebiet ab
             List<GameObject> enemies = enemyManager.GetEnemiesForBattle(GameManager.instance.currentBattleType, areaName);
@@ -48,6 +55,16 @@ public class BattleTrigger : MonoBehaviour
                 Debug.LogError("Keine Gegner für dieses Gebiet gefunden!");
                 return; // Keine Szene laden, wenn keine Gegner existieren
             }
+
+            // Hier setzen wir die Liste der Gegnernamen, die zerstört werden sollen
+            List<string> enemiesToDestroy = new List<string>();
+            foreach (var enemy in enemies)
+            {
+                enemiesToDestroy.Add(enemy.name);
+            }
+            GameManager.instance.enemiesToDestroy = enemiesToDestroy;
+            
+            GameManager.instance.RemoveEnemy();
 
             StartCoroutine(LoadBattleScene(enemies));
         }
