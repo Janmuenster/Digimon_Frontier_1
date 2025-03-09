@@ -198,13 +198,13 @@ MonoBehaviour:
   characterData: {fileID: 11400000, guid: 667d44e7b405e3e4ba73a824481e0148, type: 2}
   normalSprite: {fileID: 21300000, guid: 20cdcc48a23807a4289c6bd98725d681, type: 3}
   digivolvedSprite: {fileID: 21300000, guid: 9590d8394b4a32c42b9d3e5686835d42, type: 3}
-  characterName: 
+  characterName: Takuya
   level: 1
   maxHP: 10
-  currentHP: 10
+  currentHP: 4
   attack: 2
-  speed: 2
-  defense: 1
+  speed: 1
+  defense: 2
   attackPower: 0
   element: Free
   type: Free

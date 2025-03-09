@@ -57,13 +57,15 @@ public class CharacterStats : MonoBehaviour
         attacks.Add(new Attack("Schlag", 1, ElementType.Free, AttackType.Normal));
         attacks.Add(new Attack("Feuerball", 2, ElementType.Fire, AttackType.Special));
 
-        // Prüfe, ob es gespeicherte Werte gibt
+        // Stelle sicher, dass die gespeicherten Daten zuerst überprüft werden
         if (PlayerPrefs.HasKey("CurrentHP_" + characterName))
         {
+            // Wenn gespeicherte Daten existieren, lade sie
             LoadCharacterData();
         }
         else
         {
+            // Wenn keine gespeicherten Daten existieren, lade die Standardwerte
             LoadDefaultCharacterData();
         }
     }
@@ -89,21 +91,7 @@ public class CharacterStats : MonoBehaviour
             Debug.LogError("Keine CharacterData gesetzt!");
         }
     }
-
-    void LoadCharacterData()
-    {
-        characterName = PlayerPrefs.GetString("CharacterName", characterData.characterName);
-        level = PlayerPrefs.GetInt("Level", characterData.startLevel);
-        maxHP = PlayerPrefs.GetInt("MaxHP", characterData.startMaxHP);
-        currentHP = PlayerPrefs.GetInt("CurrentHP", characterData.startcurrentHP);
-        attack = PlayerPrefs.GetInt("Attack", characterData.startAttack);
-        speed = PlayerPrefs.GetInt("Speed", characterData.startSpeed);
-        defense = PlayerPrefs.GetInt("Defense", characterData.startDefense);
-        element = PlayerPrefs.GetString("Element", characterData.element);
-        type = PlayerPrefs.GetString("Type", characterData.type);
-
-        Debug.Log("Gespeicherte Werte geladen für " + characterName);
-    }
+    // Speichern der Charakterdaten nach dem Kampf oder beim Verlassen der Szene
     public void SaveCharacterData()
     {
         PlayerPrefs.SetString("CharacterName", characterName);
@@ -116,9 +104,26 @@ public class CharacterStats : MonoBehaviour
         PlayerPrefs.SetString("Element", element);
         PlayerPrefs.SetString("Type", type);
 
-        PlayerPrefs.Save(); // Speichert die Änderungen dauerhaft
+        PlayerPrefs.Save(); // Speichern der Daten dauerhaft
         Debug.Log("Charakterdaten gespeichert!");
     }
+
+    // Laden der Charakterdaten, falls sie vorhanden sind (bevor Standardwerte geladen werden)
+   private void LoadCharacterData()
+{
+    // Hier lädst du die gespeicherten Charakterdaten
+    characterName = PlayerPrefs.GetString("CharacterName_" + characterName);
+    currentHP = PlayerPrefs.GetInt("CurrentHP_" + characterName);
+    maxHP = PlayerPrefs.GetInt("MaxHP_" + characterName);
+    level = PlayerPrefs.GetInt("Level_" + characterName);
+    xp = PlayerPrefs.GetInt("XP_" + characterName);
+    attack = PlayerPrefs.GetInt("Attack_" + characterName);
+    defense = PlayerPrefs.GetInt("Defense_" + characterName);
+    // Füge alle anderen gespeicherten Werte hinzu...
+    
+    Debug.Log("Daten aus PlayerPrefs geladen: " + characterName);
+}
+
     public void TakeDamage(int damage)
     {
         currentHP -= damage;

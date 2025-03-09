@@ -325,6 +325,7 @@ GameObject:
   - component: {fileID: 437728938}
   - component: {fileID: 437728937}
   - component: {fileID: 437728940}
+  - component: {fileID: 437728941}
   m_Layer: 0
   m_Name: IMG_4628
   m_TagString: Untagged
@@ -458,6 +459,45 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.2281411, y: 0.86847246}
   m_EdgeRadius: 0
+--- !u!114 &437728941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 437728936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27dfaacb68559f44bad444cc2976b728, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  character:
+    characterName: 
+    level: 0
+    maxHP: 0
+    currentHP: 0
+    attack: 0
+    defense: 0
+    element: 
+    type: 
+  characterData: {fileID: 11400000, guid: 6e20193649f80c546be045fcb3b126f7, type: 2}
+  normalSprite: {fileID: 0}
+  digivolvedSprite: {fileID: 0}
+  characterName: 
+  level: 0
+  maxHP: 0
+  currentHP: 0
+  attack: 0
+  speed: 0
+  defense: 0
+  attackPower: 0
+  element: 
+  type: 
+  xp: 0
+  xpToNextLevel: 100
+  currentDigivolutionIndex: 0
+  isDigitized: 0
+  attacks: []
 --- !u!1 &506424138
 GameObject:
   m_ObjectHideFlags: 0
@@ -1163,7 +1203,7 @@ MonoBehaviour:
   previousSceneName: 
   lastPlayerPosition: {x: 0, y: 0, z: 0}
   enemiesToDestroy: []
-  playerPrefab: {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
+  playerPrefab: {fileID: 1513024609}
   currentBattleType: 0
   allCharacterPrefabs:
   - {fileID: 1104908037181630217, guid: 66b80cc78612f95478bf8f4fad86ce78, type: 3}

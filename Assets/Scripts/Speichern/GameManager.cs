@@ -11,7 +11,7 @@ public class GameManager : MonoBehaviour
     public Vector3 lastPlayerPosition;
     public List<string> enemiesToDestroy = new List<string>(); // Geändert in eine Liste
     public GameObject playerPrefab;
-    private CharacterStats savedCharacterStats; // Hinzugefügt: Zwischenspeicher für Charakterstatistiken
+    public static CharacterStats savedCharacterStats;  // Definiere diese statisch, um sie über Szenen hinweg zugänglich zu machen
     private GameObject lastBattleTrigger; // Das letzte BattleTrigger-Objekt, in das der Spieler gelaufen ist
     private string lastBattleTriggerName;
 
@@ -77,6 +77,7 @@ public class GameManager : MonoBehaviour
                 }
             }
 
+
             ApplyCharacterStats();
             RemoveEnemy();
         }
@@ -124,6 +125,11 @@ public class GameManager : MonoBehaviour
         {
             lastPlayerPosition = player.transform.position;
             Debug.Log("Overworld Position gespeichert.");
+            CharacterStats stats = player.GetComponent<CharacterStats>();
+            if (stats != null)
+            {
+                SaveCharacterStats(stats); // Speicher die Charakterdaten
+            }
         }
         else
         {
@@ -227,6 +233,7 @@ public class GameManager : MonoBehaviour
         // Speicherstand löschen und Neustart
         SaveManager.instance.DeleteSave();
         PlayerPrefs.DeleteAll();
+        PlayerPrefs.Save();
         lastPlayerPosition = Vector3.zero;
         // Setze die HP des Spielers auf den Maximalwert zurück
         foreach (var player in selectedPlayerPrefabs)
@@ -277,6 +284,9 @@ public class GameManager : MonoBehaviour
 
         if (characterStats != null)
         {
+            // Speichere die Charakterdaten mit der SaveCharacterData Methode
+            characterStats.SaveCharacterData();  // Hier wird deine Methode aufgerufen
+
             data.characterName = characterStats.characterName;
             data.level = characterStats.level;
             data.maxHP = characterStats.maxHP;
@@ -292,6 +302,7 @@ public class GameManager : MonoBehaviour
         SaveManager.instance.SaveGame(data);
         Debug.Log("Spiel gespeichert! Position: " + lastPlayerPosition + ", Gegnerstatus: " + enemiesToDestroy);
     }
+
 
     // Lade das Spiel
     public void LoadGame()
@@ -316,43 +327,77 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning("Kein Speicherstand gefunden!");
         }
     }
-
-    public void SaveCharacterStats(CharacterStats stats)
-    {
-        if (stats == null)
-        {
-            Debug.LogError("Fehler: Übergebenes CharacterStats ist null!");
-            return;
-        }
-
-        // Speichern der CharacterStats-Daten
-        savedCharacterStats = new CharacterStats
-        {
-            characterName = stats.characterName,
-            currentHP = stats.currentHP,
-            xp = stats.xp,
-            level = stats.level,
-            maxHP = stats.maxHP,
-            attack = stats.attack,
-            defense = stats.defense,
-            element = stats.element,
-            type = stats.type,
-            xpToNextLevel = stats.xpToNextLevel
-        };
-
-        Debug.Log("Charakterstatistiken gespeichert: " + savedCharacterStats.characterName);
-    }
-
-
-    public void ApplyCharacterStats()
+    public void SaveCharacterStatsBeforeSceneChange()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
+
         if (player != null)
         {
             CharacterStats stats = player.GetComponent<CharacterStats>();
             if (stats != null)
             {
-                // Wende die gespeicherten Daten auf den Charakter an
+                savedCharacterStats = new CharacterStats
+                {
+                    characterName = stats.characterName,
+                    currentHP = stats.currentHP,
+                    xp = stats.xp,
+                    level = stats.level,
+                    maxHP = stats.maxHP,
+                    attack = stats.attack,
+                    defense = stats.defense,
+                    element = stats.element,
+                    type = stats.type,
+                    xpToNextLevel = stats.xpToNextLevel
+                };
+
+                Debug.Log("Charakterstatistiken vor dem Szenenwechsel gespeichert.");
+            }
+            else
+            {
+                Debug.LogError("CharacterStats-Komponente nicht gefunden!");
+            }
+        }
+        else
+        {
+            Debug.LogError("Spieler nicht gefunden!");
+        }
+    }
+
+    public void SaveCharacterStats(CharacterStats stats)
+    {
+        if (stats != null)
+        {
+            savedCharacterStats = new CharacterStats
+            {
+                characterName = stats.characterName,
+                currentHP = stats.currentHP,
+                xp = stats.xp,
+                level = stats.level,
+                maxHP = stats.maxHP,
+                attack = stats.attack,
+                defense = stats.defense,
+                element = stats.element,
+                type = stats.type,
+                xpToNextLevel = stats.xpToNextLevel
+            };
+
+            Debug.Log("Charakterstatistiken gespeichert.");
+        }
+        else
+        {
+            Debug.LogError("CharacterStats-Komponente nicht gefunden!");
+        }
+    }
+
+    public void ApplyCharacterStats()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+        if (player != null)
+        {
+            CharacterStats stats = player.GetComponent<CharacterStats>();
+            if (stats != null)
+            {
                 stats.characterName = savedCharacterStats.characterName;
                 stats.currentHP = savedCharacterStats.currentHP;
                 stats.xp = savedCharacterStats.xp;
@@ -364,7 +409,7 @@ public class GameManager : MonoBehaviour
                 stats.type = savedCharacterStats.type;
                 stats.xpToNextLevel = savedCharacterStats.xpToNextLevel;
 
-                Debug.Log("Charakterstatistiken angewendet: " + stats.characterName);
+                Debug.Log("Charakterstatistiken angewendet.");
             }
             else
             {
@@ -376,6 +421,8 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Spieler mit dem Tag 'Player' nicht gefunden!");
         }
     }
+
+
 
 
     // Lade die Szene und setze den Spieler
@@ -393,32 +440,30 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
 
-        // Suche nach dem Spieler
+        // Spieler nach dem Szenenwechsel finden
         GameObject player = GameObject.FindGameObjectWithTag("Player");
 
         if (player != null)
         {
             // Spieler gefunden, setze seine Position
-            Debug.Log("Spieler gefunden. Setze Position auf: " + position);
             player.transform.position = position;
-            Debug.Log("Spieler geladen und auf gespeicherte Position gesetzt: " + position);
 
-            // Hier kannst du sicherstellen, dass die gespeicherten Charakterdaten angewendet werden
+            // Charakterstatistiken aus dem GameManager anwenden
             ApplyCharacterStats();
         }
         else
         {
-            // Wenn kein Spieler gefunden wurde, instanziiere ihn
             Debug.LogWarning("Spieler nicht gefunden! Instanziiere einen neuen Spieler.");
             player = Instantiate(playerPrefab, position, Quaternion.identity);
-            player.tag = "Player"; // Setze den Tag für den neuen Spieler
-            ApplyCharacterStats(); // Wende gespeicherte Stats auf den neuen Spieler an
+            player.tag = "Player";
+
+            // Statistiken auf den neuen Spieler anwenden
+            ApplyCharacterStats();
         }
 
-        // Entferne alle Gegner
+        // Gegner entfernen, falls nötig
         RemoveEnemy();
     }
-
 
 
 }

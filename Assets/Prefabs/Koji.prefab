@@ -198,15 +198,15 @@ MonoBehaviour:
   normalSprite: {fileID: 0}
   digivolvedSprite: {fileID: 0}
   characterName: 
-  level: 1
-  maxHP: 11
-  currentHP: 11
-  attack: 2
-  speed: 2
-  defense: 1
+  level: 0
+  maxHP: 0
+  currentHP: 0
+  attack: 0
+  speed: 0
+  defense: 0
   attackPower: 0
-  element: Free
-  type: Free
+  element: 
+  type: 
   xp: 0
   xpToNextLevel: 0
   currentDigivolutionIndex: 0

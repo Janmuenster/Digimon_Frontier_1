@@ -36,6 +36,7 @@ public class BattleManager1 : MonoBehaviour
     private List<GameObject> enemyObjects = new List<GameObject>();
 
     private string currentArea; // Variable, die das aktuelle Gebiet speichert
+    private CharacterStats savedCharacterStats;
 
     void Start()
     {
@@ -408,7 +409,7 @@ public class BattleManager1 : MonoBehaviour
         turnIndicatorText.text = "Alle Gegner besiegt!"; // Aktualisiere den Text, um das Kampfende anzuzeigen
 
         // Speichere die aktualisierten Charakterstatistiken im GameManager
-        SaveCharacterStats();
+        SaveCharacterStats(); // Stelle sicher, dass hier die Speichermethode aufgerufen wird!
 
         List<string> enemiesToDestroy = new List<string>();
         foreach (var enemy in enemyObjects)
@@ -417,28 +418,35 @@ public class BattleManager1 : MonoBehaviour
         }
         GameManager.instance.enemiesToDestroy = enemiesToDestroy;
 
-
-
-        yield return new WaitForSeconds(0.5f); // Warte 2 Sekunden
+        yield return new WaitForSeconds(0.5f); // Warte 0.5 Sekunden, bevor der nächste Schritt ausgeführt wird
 
         ReturnToPreviousScene(); // Rufe die Methode auf, um zur vorherigen Szene zurückzukehren
     }
 
-    void SaveCharacterStats()
+
+    private void SaveCharacterStats()
     {
-        // Durchlaufe alle Spielerobjekte und speichere ihre Statistiken
-        foreach (var playerObject in playerObjects)
+        // Wenn die Charakterdaten gespeichert werden sollen, rufe die Methode auf, die sie speichert
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
         {
-            CharacterStats stats = playerObject.GetComponent<CharacterStats>();
-            if (stats != null)
+            CharacterStats characterStats = player.GetComponent<CharacterStats>();
+            if (characterStats != null)
             {
-                // Hier speicherst du die Statistiken im GameManager. Du könntest auch eine separate
-                // Datenstruktur verwenden, um die Statistiken zu speichern und später zu laden.
-                // Zum Beispiel:
-                GameManager.instance.SaveCharacterStats(stats);
+                characterStats.SaveCharacterData();  // Speichert die Daten
+                Debug.Log("Charakterdaten nach dem Kampf gespeichert.");
+            }
+            else
+            {
+                Debug.LogError("CharacterStats-Komponente nicht gefunden!");
             }
         }
+        else
+        {
+            Debug.LogError("Spieler mit dem Tag 'Player' nicht gefunden!");
+        }
     }
+
 
     // Methode, um zur vorherigen Szene zurückzukehren
     private void ReturnToPreviousScene()
