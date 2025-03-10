@@ -86,6 +86,19 @@ public class SaveManager : MonoBehaviour
             return null;
         }
     }
+    public void SaveCharacterStats()
+    {
+        CharacterStats playerStats = FindObjectOfType<CharacterStats>();
+        if (playerStats != null)
+        {
+            playerStats.SaveCharacterData();
+            Debug.Log("CharacterStats gespeichert für: " + playerStats.characterName);
+        }
+        else
+        {
+            Debug.LogWarning("Keine CharacterStats gefunden zum Speichern.");
+        }
+    }
 
 
     public void DeleteSave()

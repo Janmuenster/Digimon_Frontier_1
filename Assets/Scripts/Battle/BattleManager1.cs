@@ -417,7 +417,7 @@ public class BattleManager1 : MonoBehaviour
             enemiesToDestroy.Add(enemy.name);
         }
         GameManager.instance.enemiesToDestroy = enemiesToDestroy;
-
+        SaveManager.instance.SaveCharacterStats();
         yield return new WaitForSeconds(0.5f); // Warte 0.5 Sekunden, bevor der nächste Schritt ausgeführt wird
 
         ReturnToPreviousScene(); // Rufe die Methode auf, um zur vorherigen Szene zurückzukehren
