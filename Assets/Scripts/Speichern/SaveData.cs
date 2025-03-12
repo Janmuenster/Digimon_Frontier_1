@@ -5,34 +5,63 @@ using UnityEngine;
 [System.Serializable]
 public class SaveData
 {
-    public float posX;
-    public float posY;
-    public float posZ;
+    public int version = 1;
+    public DateTime saveTimestamp;
     public string sceneName;
-    public List<string> enemiesToDestroy = new List<string>(); // Geändert in eine Liste
+    public SerializableVector3 playerPosition;
+    public CharacterProgress characterProgress;
+    public float totalPlayTime;
+    public List<string> destroyedEnemies = new List<string>();
 
-    public string characterName;
-    public int level;
-    public int maxHP;
-    public int currentHP;
-    public int attack;
-    public int defense;
-    public string element;
-    public string type;
-    public int xp;
-    public int xpToNextLevel;
-    public bool isDigitized;
-
-    // Getter & Setter für die Position
-    public Vector3 GetPlayerPosition()
+    [System.Serializable]
+    public struct SerializableVector3
     {
-        return new Vector3(posX, posY, posZ);
+        public float x;
+        public float y;
+        public float z;
+
+        public SerializableVector3(Vector3 vector)
+        {
+            x = vector.x;
+            y = vector.y;
+            z = vector.z;
+        }
+
+        public Vector3 ToVector3() => new Vector3(x, y, z);
+    }
+
+    [System.Serializable]
+    public class CharacterProgress
+    {
+        public string characterName;
+        public int level;
+        public int currentHP;
+        public int maxHP;
+        public int attack;
+        public int defense;
+        public int speed;
+        public int attackPower;
+        public string element;
+        public string characterType;
+        public int xp;
+        public int xpToNextLevel;
+        public bool isDigitized;
+        public int currentDigivolutionIndex;
+    }
+
+    public SaveData()
+    {
+        saveTimestamp = DateTime.Now;
+        characterProgress = new CharacterProgress();
     }
 
     public void SetPlayerPosition(Vector3 position)
     {
-        posX = position.x;
-        posY = position.y;
-        posZ = position.z;
+        playerPosition = new SerializableVector3(position);
+    }
+
+    public Vector3 GetPlayerPosition()
+    {
+        return playerPosition.ToVector3();
     }
 }

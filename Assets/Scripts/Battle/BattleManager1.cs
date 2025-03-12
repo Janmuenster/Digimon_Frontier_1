@@ -433,7 +433,7 @@ public class BattleManager1 : MonoBehaviour
             CharacterStats characterStats = player.GetComponent<CharacterStats>();
             if (characterStats != null)
             {
-                characterStats.SaveCharacterData();  // Speichert die Daten
+                characterStats.GetSaveData();  // Speichert die Daten
                 Debug.Log("Charakterdaten nach dem Kampf gespeichert.");
             }
             else
