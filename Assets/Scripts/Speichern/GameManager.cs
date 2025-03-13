@@ -2,11 +2,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
-
+using System.Threading.Tasks;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager instance;
+    public static GameManager instance { get; private set; }
     public string previousSceneName; // Variable, um den Namen der vorherigen Szene zu speichern
     public Vector3 lastPlayerPosition;
     public List<string> enemiesToDestroy = new List<string>(); // Geändert in eine Liste
@@ -14,6 +14,8 @@ public class GameManager : MonoBehaviour
     public static CharacterStats savedCharacterStats;  // Definiere diese statisch, um sie über Szenen hinweg zugänglich zu machen
     private GameObject lastBattleTrigger; // Das letzte BattleTrigger-Objekt, in das der Spieler gelaufen ist
     private string lastBattleTriggerName;
+    [SerializeField] private CharacterData defaultCharacterData;
+
 
     public BattleType currentBattleType;
     public List<GameObject> allCharacterPrefabs = new List<GameObject>(); // Alle 6 Charaktere als Prefabs
@@ -222,109 +224,91 @@ public class GameManager : MonoBehaviour
     }
 
     // Startet ein neues Spiel
-    public void StartNewGame()
+    public async Task StartNewGameAsync()
     {
-        if (SaveManager.instance == null)
+        if (defaultCharacterData == null)
         {
-            Debug.LogError("FEHLER: SaveManager.instance ist NULL!");
+            Debug.LogError("DefaultCharacterData ist nicht gesetzt!");
             return;
         }
 
-        // Speicherstand löschen und Neustart
-        SaveManager.instance.DeleteSave();
-        PlayerPrefs.DeleteAll();
-        PlayerPrefs.Save();
-        lastPlayerPosition = Vector3.zero;
-        // Setze die HP des Spielers auf den Maximalwert zurück
-        foreach (var player in selectedPlayerPrefabs)
+        CharacterStats tempStats = new CharacterStats();
+        tempStats.characterData = defaultCharacterData;
+        tempStats.LoadDefaultCharacterData();
+
+        var newSaveData = new SaveData
         {
-            CharacterStats stats = player.GetComponent<CharacterStats>();
-            stats.currentHP = stats.maxHP; // Setze die HP des Spielers zurück
-        }
+            sceneName = "Overworld",
+            playerPosition = new SaveData.SerializableVector3(Vector3.zero),
+            characterProgress = new SaveData.CharacterProgress
+            {
+                characterName = tempStats.characterName,
+                level = tempStats.level,
+                currentHP = tempStats.currentHP,
+                maxHP = tempStats.maxHP,
+                attack = tempStats.attack,
+                defense = tempStats.defense,
+                speed = tempStats.speed,
+                element = tempStats.element,
+                characterType = tempStats.type,
+                xp = 0,
+                xpToNextLevel = 100,
+                isDigitized = false
+            },
+            totalPlayTime = 0
+        };
 
-        SceneManager.LoadScene("Overworld"); // Falls das Spiel IMMER im Hauptmenü beginnt
-        Debug.Log("Neues Spiel gestartet! Alles zurückgesetzt.");
-
-        StartCoroutine(SaveAfterSceneLoad());
+        await SaveManager.Instance.SaveGameAsync(newSaveData);
+        await LoadGameAsync();
     }
 
-    // Speichern, wenn die Szene geladen ist
-    private IEnumerator SaveAfterSceneLoad()
-    {
-        yield return new WaitForSeconds(1f); // Warte, bis die Szene sicher geladen ist
-        SaveGame();
-        Debug.Log("Neues Spiel automatisch gespeichert!");
-    }
+
 
     // Speicherfunktion
-    public void SaveGame()
+    public async Task SaveGameAsync()
     {
-        if (SaveManager.instance == null)
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
         {
-            Debug.LogError("FEHLER: SaveManager.instance ist NULL!");
+            Debug.LogError("Player not found!");
             return;
         }
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        var characterStats = player.GetComponent<CharacterStats>();
+        var saveData = new SaveData
         {
-            lastPlayerPosition = player.transform.position;
-        }
-        else
-        {
-            Debug.LogWarning("Spieler konnte nicht gefunden werden! Speichere letzte bekannte Position.");
-        }
+            sceneName = SceneManager.GetActiveScene().name,
+            playerPosition = new SaveData.SerializableVector3(player.transform.position),
+            characterProgress = characterStats.GetSaveData(),
+            totalPlayTime = Time.realtimeSinceStartup
+        };
 
-        CharacterStats characterStats = player.GetComponent<CharacterStats>();
-        SaveData data = new SaveData();
-        data.SetPlayerPosition(lastPlayerPosition);
-        data.sceneName = SceneManager.GetActiveScene().name;
+        await SaveManager.Instance.SaveGameAsync(saveData);
 
-        data.enemiesToDestroy = enemiesToDestroy;
-
-        if (characterStats != null)
-        {
-            // Speichere die Charakterdaten mit der SaveCharacterData Methode
-            characterStats.SaveCharacterData();  // Hier wird deine Methode aufgerufen
-
-            data.characterName = characterStats.characterName;
-            data.level = characterStats.level;
-            data.maxHP = characterStats.maxHP;
-            data.currentHP = characterStats.currentHP;
-            data.attack = characterStats.attack;
-            data.defense = characterStats.defense;
-            data.element = characterStats.element;
-            data.type = characterStats.type;
-            data.xp = characterStats.xp;
-            data.xpToNextLevel = characterStats.xpToNextLevel;
-        }
-
-        SaveManager.instance.SaveGame(data);
-        Debug.Log("Spiel gespeichert! Position: " + lastPlayerPosition + ", Gegnerstatus: " + enemiesToDestroy);
     }
 
 
     // Lade das Spiel
-    public void LoadGame()
+    public async Task LoadGameAsync()
     {
-        if (SaveManager.instance == null)
+        var saveData = await SaveManager.Instance.LoadGameAsync();
+        if (saveData == null) return;
+
+        // AsyncOperation für asynchrones Laden der Szene
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(saveData.sceneName);
+
+        // Warte, bis die Szene vollständig geladen ist
+        while (!asyncLoad.isDone)
         {
-            Debug.LogError("FEHLER: SaveManager.instance ist NULL!");
-            return;
+            await Task.Yield();
         }
 
-        SaveData data = SaveManager.instance.LoadGame();
-        if (data != null)
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
         {
-            lastPlayerPosition = data.GetPlayerPosition();
-            enemiesToDestroy = data.enemiesToDestroy;
-            Debug.Log("Spiel geladen! Position: " + lastPlayerPosition + ", Gegnerstatus: " + enemiesToDestroy);
-
-            StartCoroutine(LoadSceneAndPlacePlayer(data.sceneName, lastPlayerPosition));
-        }
-        else
-        {
-            Debug.LogWarning("Kein Speicherstand gefunden!");
+            player.transform.position = saveData.playerPosition.ToVector3();
+            var characterStats = player.GetComponent<CharacterStats>();
+            characterStats.LoadFromSaveData(saveData.characterProgress);
         }
     }
     public void SaveCharacterStatsBeforeSceneChange()

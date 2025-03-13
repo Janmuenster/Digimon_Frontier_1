@@ -206,9 +206,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1704278990}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: StartNewGame
+      - m_Target: {fileID: 872833775}
+        m_TargetAssemblyTypeName: MainMenu, Assembly-CSharp
+        m_MethodName: NewGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -285,6 +285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0adbfec3edb4144aa65c2a0b065d7ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  saveFileName: savegame.json
 --- !u!4 &175415133
 Transform:
   m_ObjectHideFlags: 0
@@ -1272,6 +1273,7 @@ MonoBehaviour:
   lastPlayerPosition: {x: 0, y: 0, z: 0}
   enemiesToDestroy: []
   playerPrefab: {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}
+  defaultCharacterData: {fileID: 0}
   currentBattleType: 0
   allCharacterPrefabs:
   - {fileID: 4510824110806828773, guid: d260a77edc17ce34ca9c6389b316b22f, type: 3}

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System;
 
 public class PauseMenu : MonoBehaviour
 {
@@ -67,7 +68,7 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
-    public void SaveGame()
+    public async void SaveGame()
     {
         if (!isSaveConfirmation)
         {
@@ -77,12 +78,23 @@ public class PauseMenu : MonoBehaviour
         else
         {
             Debug.Log("Save-Button bestätigt, Spiel wird gespeichert...");
-            GameManager.instance.SaveGame(); // Spiel speichern
-            saveText.text = "Saved!"; // Feedback geben
-            Invoke("ResetAllButtons", 1.5f); // Nach 1,5 Sek. zurücksetzen
+            saveText.text = "Saving..."; // Feedback während des Speicherns
+
+            try
+            {
+                await GameManager.instance.SaveGameAsync();
+                saveText.text = "Saved!";
+                Debug.Log("Spiel erfolgreich gespeichert.");
+            }
+            catch (Exception e)
+            {
+                saveText.text = "Save Failed!";
+                Debug.LogError($"Fehler beim Speichern des Spiels: {e.Message}");
+            }
+
+            Invoke("ResetAllButtons", 1.5f);
         }
     }
-
 
     public void Exit()
     {

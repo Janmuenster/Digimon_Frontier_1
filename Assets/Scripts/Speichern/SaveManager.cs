@@ -1,88 +1,79 @@
 using UnityEngine;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System;
+using System.IO;
+using System.Threading.Tasks;
+using System.Security.Cryptography;
+using System.Text;
 
 public class SaveManager : MonoBehaviour
 {
-    public static SaveManager instance;
-    private string savePath;
+    public static SaveManager Instance { get; private set; }
 
-    void Awake()
+    [SerializeField] private string saveFileName = "savegame.json";
+    private string SavePath => Path.Combine(Application.persistentDataPath, saveFileName);
+
+    private const int CurrentVersion = 1;
+    private const string EncryptionKey = "YourSecretKey123"; // Ändere dies zu einem sicheren Schlüssel
+
+    private void Awake()
     {
-        if (instance == null)
+        if (Instance == null)
         {
-            instance = this;
+            Instance = this;
             DontDestroyOnLoad(gameObject);
         }
         else
         {
             Destroy(gameObject);
         }
-
-        savePath = Application.persistentDataPath + "/savegame.dat";
     }
 
-    public void SaveGame(SaveData data)
+    public async Task<bool> SaveGameAsync(SaveData data)
     {
         try
         {
-            // Stelle sicher, dass wir die aktuellen Werte aus dem Player-Objekt speichern
-            CharacterStats playerStats = FindObjectOfType<CharacterStats>();
-            if (playerStats != null)
-            {
-                data.currentHP = playerStats.currentHP; // Speichert den aktuellen HP-Wert
-            }
+            data.version = CurrentVersion;
+            data.saveTimestamp = DateTime.Now;
 
-            using (FileStream file = new FileStream(savePath, FileMode.Create))
-            {
-                BinaryFormatter bf = new BinaryFormatter();
-                bf.Serialize(file, data);
-            }
+            string json = JsonUtility.ToJson(data);
+            string encrypted = Encrypt(json);
 
-            Debug.Log("Spiel gespeichert! Position: " + data.GetPlayerPosition() + " HP: " + data.currentHP);
+            await File.WriteAllTextAsync(SavePath, encrypted);
+            CreateBackup();
+            return true;
         }
         catch (Exception ex)
         {
-            Debug.LogError("Fehler beim Speichern: " + ex.Message);
+            Debug.LogError($"Fehler beim Speichern: {ex.Message}");
+            return false;
         }
     }
 
-
-    public bool SaveExists()
+    public async Task<SaveData> LoadGameAsync()
     {
-        return File.Exists(savePath);
-    }
-
-    public SaveData LoadGame()
-    {
-        if (!File.Exists(savePath))
+        if (!File.Exists(SavePath))
         {
-            Debug.LogWarning("Kein Speicherstand gefunden!");
+            Debug.LogWarning("Kein Speicherstand gefunden.");
             return null;
         }
 
         try
         {
-            using (FileStream file = new FileStream(savePath, FileMode.Open))
+            string encrypted = await File.ReadAllTextAsync(SavePath);
+            string json = Decrypt(encrypted);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            if (data.version > CurrentVersion)
             {
-                BinaryFormatter bf = new BinaryFormatter();
-                SaveData data = (SaveData)bf.Deserialize(file);
-
-                // Falls der Spieler-Charakter schon existiert, Werte aktualisieren
-                CharacterStats playerStats = FindObjectOfType<CharacterStats>();
-                if (playerStats != null)
-                {
-                    playerStats.currentHP = data.currentHP;
-                    playerStats.maxHP = data.maxHP;
-                }
-
-                return data;
+                Debug.LogError("Speicherstand ist von einer neueren Version.");
+                return null;
             }
+
+            return data;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.LogError("Fehler beim Laden des Spiels: " + e.Message);
+            Debug.LogError($"Fehler beim Laden: {ex.Message}");
             return null;
         }
     }
@@ -91,7 +82,7 @@ public class SaveManager : MonoBehaviour
         CharacterStats playerStats = FindObjectOfType<CharacterStats>();
         if (playerStats != null)
         {
-            playerStats.SaveCharacterData();
+            playerStats.GetSaveData();
             Debug.Log("CharacterStats gespeichert für: " + playerStats.characterName);
         }
         else
@@ -100,13 +91,51 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-
-    public void DeleteSave()
+    private string Encrypt(string data)
     {
-        if (File.Exists(savePath))
+        byte[] encryptedBytes;
+        using (Aes aes = Aes.Create())
         {
-            File.Delete(savePath);
-            Debug.Log("Spielstand gelöscht!");
+            aes.Key = Encoding.UTF8.GetBytes(EncryptionKey);
+            aes.IV = new byte[16]; // Für Einfachheit, in Produktion sollte ein zufälliger IV verwendet werden
+
+            ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (CryptoStream cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                using (StreamWriter sw = new StreamWriter(cs))
+                {
+                    sw.Write(data);
+                }
+                encryptedBytes = ms.ToArray();
+            }
         }
+        return Convert.ToBase64String(encryptedBytes);
+    }
+
+    private string Decrypt(string encryptedData)
+    {
+        byte[] encryptedBytes = Convert.FromBase64String(encryptedData);
+        string decryptedData;
+        using (Aes aes = Aes.Create())
+        {
+            aes.Key = Encoding.UTF8.GetBytes(EncryptionKey);
+            aes.IV = new byte[16];
+
+            ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+            using (MemoryStream ms = new MemoryStream(encryptedBytes))
+            using (CryptoStream cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+            using (StreamReader sr = new StreamReader(cs))
+            {
+                decryptedData = sr.ReadToEnd();
+            }
+        }
+        return decryptedData;
+    }
+
+    private void CreateBackup()
+    {
+        string backupPath = SavePath + ".bak";
+        File.Copy(SavePath, backupPath, true);
     }
 }

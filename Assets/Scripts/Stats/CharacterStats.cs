@@ -1,24 +1,19 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-
-
+using System.Threading.Tasks;
 
 public class CharacterStats : MonoBehaviour
 {
-
-
     public Character character;
 
     [Header("Datenquelle")]
-    public CharacterData characterData; // Ziehe hier das ScriptableObject rein!
+    public CharacterData characterData;
 
     [Header("Sprites")]
     public Sprite normalSprite;
     public Sprite digivolvedSprite;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
-
 
     [Header("Stats")]
     public string characterName;
@@ -34,9 +29,8 @@ public class CharacterStats : MonoBehaviour
     public int xp = 0;
     public int xpToNextLevel = 100;
 
-
     [Header("Digitation")]
-    public int currentDigivolutionIndex = 0; // Index der aktuellen Digitation
+    public int currentDigivolutionIndex = 0;
     public bool isDigitized = false;
     private int baseHP;
     private int baseAttack;
@@ -46,31 +40,53 @@ public class CharacterStats : MonoBehaviour
     private string baseType;
 
     public List<Attack> attacks = new List<Attack>();
-    void Start()
+
+    private async void Start()
+    {
+        InitializeComponents();
+        InitializeAttacks();
+        await LoadCharacterData();
+    }
+
+    private void InitializeComponents()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer == null)
-        {
-            Debug.LogError("SpriteRenderer nicht gefunden!");
-        }
         animator = GetComponent<Animator>();
+
+        if (spriteRenderer == null)
+            Debug.LogError($"SpriteRenderer nicht gefunden auf {gameObject.name}!");
+        if (animator == null)
+            Debug.LogError($"Animator nicht gefunden auf {gameObject.name}!");
+    }
+
+    private void InitializeAttacks()
+    {
         attacks.Add(new Attack("Schlag", 1, ElementType.Free, AttackType.Normal));
         attacks.Add(new Attack("Feuerball", 2, ElementType.Fire, AttackType.Special));
+    }
 
-        // Stelle sicher, dass die gespeicherten Daten zuerst überprüft werden
-        if (PlayerPrefs.HasKey("CurrentHP_" + characterName))
+    private async Task LoadCharacterData()
+    {
+        if (CompareTag("Player"))
         {
-            // Wenn gespeicherte Daten existieren, lade sie
-            LoadCharacterData();
+            SaveData saveData = await SaveManager.Instance.LoadGameAsync();
+            if (saveData != null && saveData.characterProgress != null)
+            {
+                LoadFromSaveData(saveData.characterProgress);
+                Debug.Log($"Charakterdaten für {characterName} geladen.");
+            }
+            else
+            {
+                LoadDefaultCharacterData();
+            }
         }
         else
         {
-            // Wenn keine gespeicherten Daten existieren, lade die Standardwerte
             LoadDefaultCharacterData();
         }
     }
 
-    void LoadDefaultCharacterData()
+    public void LoadDefaultCharacterData()
     {
         if (characterData != null)
         {
@@ -84,105 +100,116 @@ public class CharacterStats : MonoBehaviour
             element = characterData.element;
             type = characterData.type;
 
-            Debug.Log("Standardwerte geladen für " + characterName);
+            Debug.Log($"Standardwerte geladen für {characterName}");
         }
         else
         {
             Debug.LogError("Keine CharacterData gesetzt!");
         }
     }
-    // Speichern der Charakterdaten nach dem Kampf oder beim Verlassen der Szene
-    public void SaveCharacterData()
-    {
-        PlayerPrefs.SetString("CharacterName_" + characterName, characterName);
-        PlayerPrefs.SetInt("Level_" + characterName, level);
-        PlayerPrefs.SetInt("MaxHP_" + characterName, maxHP);
-        PlayerPrefs.SetInt("CurrentHP_" + characterName, currentHP);
-        PlayerPrefs.SetInt("Attack_" + characterName, attack);
-        PlayerPrefs.SetInt("Speed_" + characterName, speed);
-        PlayerPrefs.SetInt("Defense_" + characterName, defense);
-        PlayerPrefs.SetString("Element_" + characterName, element);
-        PlayerPrefs.SetString("Type_" + characterName, type);
-        PlayerPrefs.SetInt("XP_" + characterName, xp);
-        PlayerPrefs.SetInt("XPToNextLevel_" + characterName, xpToNextLevel);
 
-        PlayerPrefs.Save();
-        Debug.Log("Charakterdaten für " + characterName + " gespeichert!");
+    public SaveData.CharacterProgress GetSaveData()
+    {
+        return new SaveData.CharacterProgress
+        {
+            characterName = this.characterName,
+            level = this.level,
+            currentHP = this.currentHP,
+            maxHP = this.maxHP,
+            attack = this.attack,
+            defense = this.defense,
+            element = this.element,
+            characterType = this.type,
+            xp = this.xp,
+            xpToNextLevel = this.xpToNextLevel,
+            isDigitized = this.isDigitized
+        };
     }
 
-
-    // Laden der Charakterdaten, falls sie vorhanden sind (bevor Standardwerte geladen werden)
-    private void LoadCharacterData()
+    public void LoadFromSaveData(SaveData.CharacterProgress data)
     {
-        characterName = PlayerPrefs.GetString("CharacterName_" + characterName, characterName);
-        level = PlayerPrefs.GetInt("Level_" + characterName, level);
-        maxHP = PlayerPrefs.GetInt("MaxHP_" + characterName, maxHP);
-        currentHP = PlayerPrefs.GetInt("CurrentHP_" + characterName, currentHP);
-        attack = PlayerPrefs.GetInt("Attack_" + characterName, attack);
-        speed = PlayerPrefs.GetInt("Speed_" + characterName, speed);
-        defense = PlayerPrefs.GetInt("Defense_" + characterName, defense);
-        element = PlayerPrefs.GetString("Element_" + characterName, element);
-        type = PlayerPrefs.GetString("Type_" + characterName, type);
-        xp = PlayerPrefs.GetInt("XP_" + characterName, xp);
-        xpToNextLevel = PlayerPrefs.GetInt("XPToNextLevel_" + characterName, xpToNextLevel);
-
-        Debug.Log("Daten aus PlayerPrefs geladen für: " + characterName);
+        characterName = data.characterName;
+        level = data.level;
+        currentHP = data.currentHP;
+        maxHP = data.maxHP;
+        attack = data.attack;
+        defense = data.defense;
+        element = data.element;
+        type = data.characterType;
+        xp = data.xp;
+        xpToNextLevel = data.xpToNextLevel;
+        isDigitized = data.isDigitized;
     }
 
-
-    public void TakeDamage(int damage)
+    public async void TakeDamage(int damage)
     {
         currentHP -= damage;
         currentHP = Mathf.Clamp(currentHP, 0, maxHP);
-        Debug.Log(characterName + " hat " + damage + " Schaden erlitten. Aktuelle Gesundheit: " + currentHP);
+        Debug.Log($"{characterName} hat {damage} Schaden erlitten. Aktuelle Gesundheit: {currentHP}");
 
-        SaveCharacterData(); // Speichern nach erlittenem Schaden
+        if (CompareTag("Player"))
+        {
+            await SaveManager.Instance.SaveGameAsync(new SaveData { characterProgress = GetSaveData() });
+        }
 
         if (currentHP <= 0)
         {
             Die();
         }
     }
+
     private void Die()
     {
-        Debug.Log(characterName + " ist gestorben!");
+        Debug.Log($"{characterName} ist gestorben!");
 
-        // Rufe die OnEnemyDefeated-Methode im BattleManager auf, wenn es ein Gegner ist
-        if (gameObject.CompareTag("Enemy")) // Stelle sicher, dass deine Gegner den Tag "Enemy" haben
+        if (CompareTag("Enemy"))
         {
-            BattleManager1.instance.OnEnemyDefeated(gameObject); // Gib das Gameobject des Gegners weiter
+            BattleManager1.instance.OnEnemyDefeated(gameObject);
         }
-        else if (gameObject.CompareTag("Player"))
+        else if (CompareTag("Player"))
         {
-            // Hier kannst du Logik für den Tod des Spielers hinzufügen, falls erforderlich
             Debug.Log("Spieler ist gestorben!");
-            // Beispiel: EndBattleSequence starten, wenn alle Spieler tot sind
-            // BattleManager1.instance.CheckIfAllPlayersAreDefeated();
         }
 
-        // Zerstöre das Gameobject des Charakters
         Destroy(gameObject);
     }
-    public void SavePlayerPosition()
-    {
-        PlayerPrefs.SetFloat("PlayerPosX", transform.position.x);
-        PlayerPrefs.SetFloat("PlayerPosY", transform.position.y);
-        PlayerPrefs.SetFloat("PlayerPosZ", transform.position.z);
-        PlayerPrefs.Save();
-        Debug.Log("Spielerposition gespeichert: " + transform.position);
-    }
-    void LoadPlayerPosition()
-    {
-        if (PlayerPrefs.HasKey("PlayerPosX"))
-        {
-            float x = PlayerPrefs.GetFloat("PlayerPosX");
-            float y = PlayerPrefs.GetFloat("PlayerPosY");
-            float z = PlayerPrefs.GetFloat("PlayerPosZ");
 
-            transform.position = new Vector3(x, y, z);
-            Debug.Log("Spielerposition geladen: " + transform.position);
+    public async Task SavePlayerPosition()
+    {
+        if (CompareTag("Player"))
+        {
+            SaveData currentSave = await SaveManager.Instance.LoadGameAsync() ?? new SaveData();
+            currentSave.playerPosition = new SaveData.SerializableVector3(transform.position);
+            await SaveManager.Instance.SaveGameAsync(currentSave);
+            Debug.Log($"Spielerposition gespeichert: {transform.position}");
         }
     }
 
+    public async Task LoadPlayerPosition()
+    {
+        if (CompareTag("Player"))
+        {
+            SaveData saveData = await SaveManager.Instance.LoadGameAsync();
+            if (saveData != null)
+            {
+                Vector3 loadedPosition = saveData.GetPlayerPosition();
+                if (loadedPosition != Vector3.zero)
+                {
+                    transform.position = loadedPosition;
+                    Debug.Log($"Spielerposition geladen: {transform.position}");
+                }
+                else
+                {
+                    Debug.LogWarning("Keine gültige Spielerposition in den Speicherdaten gefunden.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Keine Speicherdaten gefunden.");
+            }
+        }
+    }
 }
+
+
 
