@@ -12,6 +12,7 @@ public class SaveData
     public CharacterProgress characterProgress;
     public float totalPlayTime;
     public List<string> destroyedEnemies = new List<string>();
+    public List<CharacterProgress> characterProgresses;
 
     [System.Serializable]
     public struct SerializableVector3
@@ -52,7 +53,7 @@ public class SaveData
     public SaveData()
     {
         saveTimestamp = DateTime.Now;
-        characterProgress = new CharacterProgress();
+        characterProgresses = new List<CharacterProgress>();
     }
 
     public void SetPlayerPosition(Vector3 position)
@@ -63,5 +64,23 @@ public class SaveData
     public Vector3 GetPlayerPosition()
     {
         return playerPosition.ToVector3();
+    }
+    public void AddOrUpdateCharacterProgress(CharacterProgress progress)
+    {
+        var existingProgress = characterProgresses.Find(cp => cp.characterName == progress.characterName);
+        if (existingProgress != null)
+        {
+            int index = characterProgresses.IndexOf(existingProgress);
+            characterProgresses[index] = progress;
+        }
+        else
+        {
+            characterProgresses.Add(progress);
+        }
+    }
+
+    public CharacterProgress GetCharacterProgress(string characterName)
+    {
+        return characterProgresses.Find(cp => cp.characterName == characterName);
     }
 }

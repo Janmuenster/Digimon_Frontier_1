@@ -226,41 +226,58 @@ public class GameManager : MonoBehaviour
     // Startet ein neues Spiel
     public async Task StartNewGameAsync()
     {
-        if (defaultCharacterData == null)
+        // Finde alle GameObjects mit dem Tag "Player"
+        GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
+
+        if (playerObjects.Length == 0)
         {
-            Debug.LogError("DefaultCharacterData ist nicht gesetzt!");
+            Debug.LogError("Keine Spieler-Objekte gefunden!");
             return;
         }
 
-        CharacterStats tempStats = new CharacterStats();
-        tempStats.characterData = defaultCharacterData;
-        tempStats.LoadDefaultCharacterData();
+        List<SaveData.CharacterProgress> characterProgresses = new List<SaveData.CharacterProgress>();
+
+        foreach (GameObject playerObject in playerObjects)
+        {
+            CharacterStats characterStats = playerObject.GetComponent<CharacterStats>();
+
+            if (characterStats == null || characterStats.characterData == null)
+            {
+                Debug.LogError($"CharacterStats oder CharacterData fehlt für {playerObject.name}!");
+                return;
+            }
+
+            characterStats.LoadDefaultCharacterData();
+
+            characterProgresses.Add(new SaveData.CharacterProgress
+            {
+                characterName = characterStats.characterName,
+                level = characterStats.level,
+                currentHP = characterStats.currentHP,
+                maxHP = characterStats.maxHP,
+                attack = characterStats.attack,
+                defense = characterStats.defense,
+                speed = characterStats.speed,
+                element = characterStats.element,
+                characterType = characterStats.type,
+                xp = 0,
+                xpToNextLevel = 100,
+                isDigitized = false
+            });
+        }
 
         var newSaveData = new SaveData
         {
             sceneName = "Overworld",
             playerPosition = new SaveData.SerializableVector3(Vector3.zero),
-            characterProgress = new SaveData.CharacterProgress
-            {
-                characterName = tempStats.characterName,
-                level = tempStats.level,
-                currentHP = tempStats.currentHP,
-                maxHP = tempStats.maxHP,
-                attack = tempStats.attack,
-                defense = tempStats.defense,
-                speed = tempStats.speed,
-                element = tempStats.element,
-                characterType = tempStats.type,
-                xp = 0,
-                xpToNextLevel = 100,
-                isDigitized = false
-            },
+            characterProgresses = characterProgresses,
             totalPlayTime = 0
         };
 
         await SaveManager.Instance.SaveGameAsync(newSaveData);
         await LoadGameAsync();
     }
+
 
 
 

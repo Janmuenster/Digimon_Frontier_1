@@ -70,10 +70,19 @@ public class CharacterStats : MonoBehaviour
         if (CompareTag("Player"))
         {
             SaveData saveData = await SaveManager.Instance.LoadGameAsync();
-            if (saveData != null && saveData.characterProgress != null)
+            if (saveData != null && saveData.characterProgresses != null && saveData.characterProgresses.Count > 0)
             {
-                LoadFromSaveData(saveData.characterProgress);
-                Debug.Log($"Charakterdaten für {characterName} geladen.");
+                // Finde den passenden CharacterProgress für diesen Charakter
+                var characterProgress = saveData.characterProgresses.Find(cp => cp.characterName == this.characterName);
+                if (characterProgress != null)
+                {
+                    LoadFromSaveData(characterProgress);
+                    Debug.Log($"Charakterdaten für {characterName} geladen.");
+                }
+                else
+                {
+                    LoadDefaultCharacterData();
+                }
             }
             else
             {
@@ -85,6 +94,7 @@ public class CharacterStats : MonoBehaviour
             LoadDefaultCharacterData();
         }
     }
+
 
     public void LoadDefaultCharacterData()
     {
@@ -149,7 +159,17 @@ public class CharacterStats : MonoBehaviour
 
         if (CompareTag("Player"))
         {
-            await SaveManager.Instance.SaveGameAsync(new SaveData { characterProgress = GetSaveData() });
+            SaveData currentSave = await SaveManager.Instance.LoadGameAsync() ?? new SaveData();
+            var characterProgress = currentSave.characterProgresses.Find(cp => cp.characterName == this.characterName);
+            if (characterProgress != null)
+            {
+                characterProgress = GetSaveData();
+            }
+            else
+            {
+                currentSave.characterProgresses.Add(GetSaveData());
+            }
+            await SaveManager.Instance.SaveGameAsync(currentSave);
         }
 
         if (currentHP <= 0)
@@ -157,6 +177,7 @@ public class CharacterStats : MonoBehaviour
             Die();
         }
     }
+
 
     private void Die()
     {
@@ -180,10 +201,23 @@ public class CharacterStats : MonoBehaviour
         {
             SaveData currentSave = await SaveManager.Instance.LoadGameAsync() ?? new SaveData();
             currentSave.playerPosition = new SaveData.SerializableVector3(transform.position);
+
+            // Aktualisiere oder füge den CharacterProgress hinzu
+            var characterProgress = currentSave.characterProgresses.Find(cp => cp.characterName == this.characterName);
+            if (characterProgress != null)
+            {
+                characterProgress = GetSaveData();
+            }
+            else
+            {
+                currentSave.characterProgresses.Add(GetSaveData());
+            }
+
             await SaveManager.Instance.SaveGameAsync(currentSave);
-            Debug.Log($"Spielerposition gespeichert: {transform.position}");
+            Debug.Log($"Spielerposition und Daten für {characterName} gespeichert: {transform.position}");
         }
     }
+
 
     public async Task LoadPlayerPosition()
     {
